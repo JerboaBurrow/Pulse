@@ -104,13 +104,13 @@ impl IpThrottler
 pub async fn handle_throttle<B>
 (
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
-    State(state): State<Arc<Mutex<IpThrottler>>>,
+    State(state): State<Arc<Mutex<crate::server::Config>>>,
     request: Request<B>,
     next: Next<B>
 ) -> Result<Response, StatusCode>
 {
 
-    if state.lock().unwrap().is_limited(addr)
+    if state.lock().unwrap().throttle.is_limited(addr)
     {
         Err(StatusCode::TOO_MANY_REQUESTS)
     }
