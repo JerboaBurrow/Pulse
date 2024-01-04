@@ -12,8 +12,6 @@ mod test_issue_payload
         
         assert_eq!(parsed_data["action"], "opened");
 
-        let issue_data = parsed_data["issue"].clone();
-
         assert_eq!(parsed_data["issue"]["repository_url"], "https://api.github.com/repos/JerboaBurrow/test");
     }
 
