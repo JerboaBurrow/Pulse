@@ -1,27 +1,13 @@
-on local machine (with 3030 open)
+### Pulse 
+#### A work in progress information bot linking Discord and Github, with more to come
 
-````
-switchboard -p 3030
-```
+- for now uses a Discord webhook for only posting messages
+- recieves POST requests (e.g. from github webhooks) to be processed into custom messages, which are then POST'd to Discord
+    - so we can format the Github POST content to our hearts content
+ 
+# To come
 
-on gcloud server
-```
-curl -i -H "Accept: application/json" -H "Content-Type:application/json" -X POST --data "dasflkjsdalkfjlasd;fjas" 81.78.215.199:3030
-```
-
-gave the reflection 
-
-```
-You sent:
-dasflkjsdalkfjlasd;fjas
-```
-
-also worked via http github webhook
-
-reqwest - worked posting to discord (https)
-
-self signed cert generation
-
-```
-openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -sha256 -days 365
-```
+- [ ] support for https POST reciepts (does work, just need actual certs, and to bundle them in)
+- [ ] verify POST's are from github using the webhook secret
+- [ ] Release formatting
+- [ ] Pre-release formatting
