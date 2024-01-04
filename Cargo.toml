@@ -1,0 +1,37 @@
+[package]
+name = "pulse"
+version = "0.0.1"
+authors = ["Jerboa"]
+
+edition="2021"
+
+[[bin]]
+name = "pulse"
+path = "src/pulse.rs"
+
+[[bin]]
+name = "pulse-ssl"
+path = "src/pulse-ssl.rs"
+
+[[bin]]
+name = "post"
+path = "src/post.rs"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+axum = "0.6.20"
+axum-server = { version = "0.3", features = ["tls-rustls"] }
+rand =    { git = "https://github.com/rust-lang-nursery/rand" }
+openssl = { version = "0.10", features = ["vendored"] }
+hex = "0.4.3"
+chrono = "0.4.31"
+serde = {version="1.0", features=["derive"]}
+serde_json = "1.0"
+reqwest = { version = "0.11", features = ["blocking", "json"] }
+
+[profile.dev]
+opt-level = 0
+
+[profile.release]
+opt-level = 3
+
