@@ -30,8 +30,7 @@ use chrono::Local;
 /// 
 /// use pulse::web::response::util::reflect;
 /// 
-/// #[tokio::main]
-/// pub async fn main() {
+/// pub async fn server() {
 /// let app = Router::new()
 /// .route("/", post(|| async move {  }))
 /// .layer(middleware::from_fn(reflect));
@@ -88,8 +87,8 @@ where B: axum::body::HttpBody<Data = Bytes>
 /// 
 /// use pulse::web::response::util::stdout_log;
 /// 
-/// #[tokio::main]
-/// pub async fn main() {
+/// 
+/// pub async fn server() {
 /// let app = Router::new()
 /// .route("/", post(|| async move {  }))
 /// .layer(middleware::from_fn(stdout_log));

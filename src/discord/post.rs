@@ -14,7 +14,10 @@ use crate::discord::model::Webhook;
 /// 
 /// # Example
 /// ```rust
-/// pub async fn foo(){
+/// 
+/// use pulse::discord::{model::Webhook, post::post};
+/// 
+/// pub async fn post_to_discord(){
 ///     let w = Webhook::new("https://discord.com/api/webhooks/xxx/yyy".to_string());
 ///     post(w, "this is some plaintext".to_string());
 /// }

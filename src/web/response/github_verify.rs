@@ -66,8 +66,7 @@ pub fn read_bytes(v: String) -> Vec<u8>
 /// 
 /// use pulse::web::response::github_verify::github_verify;
 /// 
-/// #[tokio::main]
-/// pub async fn main() {
+/// pub async fn server() {
 /// let authenticated_state = "this_is_a_secret".to_string();
 /// 
 /// let app = Router::new()
