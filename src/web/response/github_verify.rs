@@ -20,7 +20,6 @@ use openssl::sign::Signer;
 use regex::Regex;
 
 use std::fmt::Write;
-use std::sync::{Arc, Mutex};
 
 pub fn dump_bytes(v: &[u8]) -> String 
 {
@@ -51,14 +50,27 @@ pub async fn github_verify<B>
 ) -> Result<Response, StatusCode>
 where B: axum::body::HttpBody<Data = Bytes>
 {
-    let (_parts, body) = request.into_parts();
 
-    let bytes = match body.collect().await {
-        Ok(collected) => collected.to_bytes(),
-        Err(_) => {
-            return Err(StatusCode::BAD_REQUEST)
+    let user_agent = match std::str::from_utf8(headers["user-agent"].as_bytes())
+    {
+        Ok(u) => u,
+        Err(_) =>
+        {
+            crate::debug("no/mangled user agent".to_string(), None);
+            return Ok((StatusCode::BAD_REQUEST).into_response())
         }
     };
+
+    match Regex::new(r"GitHub-Hookshot").unwrap().captures(user_agent)
+    {
+        Some(_) => {crate::debug("github user agent, processing".to_string(), None);},
+        None => 
+        {
+            crate::debug("not github user agent, next".to_string(), None);
+            let response = next.run(request).await;
+            return Ok(response)
+        }
+    }
 
     match headers.contains_key("x-hub-signature-256")
     {
@@ -100,6 +112,15 @@ where B: axum::body::HttpBody<Data = Bytes>
         {
             crate::debug("signer creation failure".to_string(), None);
             return Ok((StatusCode::INTERNAL_SERVER_ERROR).into_response())
+        }
+    };
+
+    let (_parts, body) = request.into_parts();
+
+    let bytes = match body.collect().await {
+        Ok(collected) => collected.to_bytes(),
+        Err(_) => {
+            return Err(StatusCode::BAD_REQUEST)
         }
     };
     
