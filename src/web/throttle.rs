@@ -11,12 +11,6 @@ use axum::
     middleware::Next
 };
 
-
-fn parse_ip(addr: SocketAddr) -> String 
-{
-    addr.to_string()
-}
-
 pub struct Requests
 {
     count: u32,

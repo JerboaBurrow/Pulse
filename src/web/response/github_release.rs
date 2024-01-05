@@ -10,8 +10,9 @@ use axum::response::Response;
 
 use std::convert::{From, Into};
 
-use chrono::Local;
 use regex::Regex;
+
+use crate::discord::model::Webhook;
 
 fn strip_control_characters(s: String) -> String
 {
@@ -20,7 +21,7 @@ fn strip_control_characters(s: String) -> String
 }
 
 #[derive(Debug)]
-enum GITHUB_RELEASE_ACTION_TYPE
+enum GithubReleaseActionType
 {
     CREATED,
     DELETED,
@@ -32,9 +33,9 @@ enum GITHUB_RELEASE_ACTION_TYPE
     UNKOWN
 }
 
-impl From<&str> for GITHUB_RELEASE_ACTION_TYPE
+impl From<&str> for GithubReleaseActionType
 {
-    fn from(s: &str) -> GITHUB_RELEASE_ACTION_TYPE
+    fn from(s: &str) -> GithubReleaseActionType
     {
         match s 
         {
@@ -52,7 +53,8 @@ impl From<&str> for GITHUB_RELEASE_ACTION_TYPE
 
 pub async fn github_release<B>
 (
-    State(body): State<String>
+    State(body): State<String>,
+    State(disc): State<Webhook>
 ) -> Result<Response, StatusCode>
 {
 
@@ -68,7 +70,7 @@ pub async fn github_release<B>
 
     if parsed_data.contains_key("action") 
     {
-        let action: GITHUB_RELEASE_ACTION_TYPE = match parsed_data["action"].to_owned().as_str()
+        let action: GithubReleaseActionType = match parsed_data["action"].to_owned().as_str()
         {
             Some(s) => {s.into()},
             None => 
@@ -78,7 +80,7 @@ pub async fn github_release<B>
             }
         };
 
-        return respond(action, parsed_data).await;
+        return respond(action, parsed_data, disc).await;
     }
     else
     {
@@ -88,14 +90,14 @@ pub async fn github_release<B>
 
 }
 
-async fn respond(action: GITHUB_RELEASE_ACTION_TYPE, data: HashMap<String, serde_json::Value>) -> Result<Response, StatusCode>
+async fn respond(action: GithubReleaseActionType, data: HashMap<String, serde_json::Value>, disc: Webhook) -> Result<Response, StatusCode>
 {
     crate::debug(format!("Processing github release payload: {:?}", action), None);
     
     match action 
     {
-        GITHUB_RELEASE_ACTION_TYPE::CREATED => {}
-        GITHUB_RELEASE_ACTION_TYPE::PUBLISHED => {},
+        GithubReleaseActionType::CREATED => {}
+        GithubReleaseActionType::PUBLISHED => {},
         _ => {}
     }
 

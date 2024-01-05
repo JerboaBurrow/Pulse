@@ -49,7 +49,7 @@ pub async fn reflect<B>
 (
     headers: HeaderMap,
     request: Request<B>,
-    next: Next<B>
+    _next: Next<B>
 ) -> Result<Response, StatusCode>
 where B: axum::body::HttpBody<Data = Bytes>
 {
@@ -106,7 +106,7 @@ pub async fn stdout_log<B>
 (
     headers: HeaderMap,
     request: Request<B>,
-    next: Next<B>
+    _next: Next<B>
 ) -> Result<Response, StatusCode>
 where B: axum::body::HttpBody<Data = Bytes>
 {

@@ -3,6 +3,8 @@ pub mod discord;
 pub mod web;
 pub mod server;
 
+pub mod util;
+
 #[cfg(feature = "http")]
 pub mod server_http;
 
