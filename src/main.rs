@@ -1,4 +1,4 @@
-use pulse::{server::Server, discord::model::Webhook};
+use pulse::{server::Server, web::request::discord::model::Webhook};
 
 #[tokio::main]
 async fn main() {

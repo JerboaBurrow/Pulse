@@ -2,7 +2,7 @@
 
 use std::collections::HashMap;
 
-use crate::discord::model::Webhook;
+use crate::web::request::discord::model::Webhook;
 
 /// Send a simple plaintext string message, msg, to the webhook w
 /// 
@@ -15,7 +15,7 @@ use crate::discord::model::Webhook;
 /// # Example
 /// ```rust
 /// 
-/// use pulse::discord::{model::Webhook, post::post};
+/// use pulse::web::request::discord::{model::Webhook, post::post};
 /// 
 /// pub async fn post_to_discord(){
 ///     let w = Webhook::new("https://discord.com/api/webhooks/xxx/yyy".to_string());

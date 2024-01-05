@@ -18,9 +18,9 @@ use openssl::sign::Signer;
 use regex::Regex;
 
 use std::collections::HashMap;
-use crate::discord::model::Webhook;
 
-use crate::discord::post::post;
+use crate::web::request::discord::{model::Webhook, post::post};
+
 use crate::util::{dump_bytes, read_bytes, strip_control_characters};
 
 #[derive(Clone)]
@@ -113,11 +113,12 @@ impl Into<String> for GithubReleaseActionType
 ///     middleware
 /// };
 /// 
-/// use pulse::web::response::github_verify::github_verify;
+/// use pulse::web::request::discord::model::Webhook;
+/// use pulse::web::response::github::{filter_github, GithubConfig};
 /// 
 /// pub async fn server() {
 /// 
-///     let github = GithubConfig::new(token, disc);
+///     let github = GithubConfig::new("secret".to_string(), Webhook::new("url".to_string()));
 /// 
 ///     let app = Router::new()
 ///     .route("/", post(|| async move {  }))

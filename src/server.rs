@@ -1,7 +1,9 @@
-
-use crate::discord::model::Webhook;
-use crate::web::throttle::{IpThrottler, handle_throttle};
-use crate::web::response::github::{filter_github, GithubConfig};
+use crate::web::
+{
+    throttle::{IpThrottler, handle_throttle},
+    response::github::{filter_github, GithubConfig},
+    request::discord::model::Webhook
+};
 
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::path::PathBuf;

@@ -1,5 +1,3 @@
-pub mod discord;
-
 pub mod web;
 pub mod server;
 
