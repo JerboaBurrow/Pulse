@@ -93,7 +93,7 @@ pub async fn serve(token: String) {
         3030
     };
 
-    let server = ServerHttp::new(127,0,0,1,port,token);
+    let server = ServerHttp::new(0,0,0,0,port,token);
 
     server.serve().await
 

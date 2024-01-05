@@ -146,7 +146,7 @@ pub async fn serve(token: String) {
         "./key.pem".to_string()
     };
 
-    let server = Server::new(127,0,0,1,port,token);
+    let server = Server::new(0,0,0,0,port,token);
 
     server.serve(cert_path, key_path).await
 
