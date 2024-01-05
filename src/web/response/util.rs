@@ -28,17 +28,22 @@ use chrono::Local;
 ///     middleware
 /// };
 /// 
+/// use pulse::web::response::util::reflect;
+/// 
+/// #[tokio::main]
+/// pub async fn main() {
 /// let app = Router::new()
 /// .route("/", post(|| async move {  }))
 /// .layer(middleware::from_fn(reflect));
 /// 
 /// let ip = Ipv4Addr::new(127,0,0,1);
-/// let addr = SocketAddr::new(IpAddr::V4(ip), port);
+/// let addr = SocketAddr::new(IpAddr::V4(ip), 3030);
 /// 
 /// axum::Server::bind(&addr)
 /// .serve(app.into_make_service_with_connect_info::<SocketAddr>())
 /// .await
 /// .unwrap();
+/// }
 /// ````
 
 pub async fn reflect<B>
@@ -81,17 +86,22 @@ where B: axum::body::HttpBody<Data = Bytes>
 ///     middleware
 /// };
 /// 
+/// use pulse::web::response::util::stdout_log;
+/// 
+/// #[tokio::main]
+/// pub async fn main() {
 /// let app = Router::new()
 /// .route("/", post(|| async move {  }))
 /// .layer(middleware::from_fn(stdout_log));
 /// 
 /// let ip = Ipv4Addr::new(127,0,0,1);
-/// let addr = SocketAddr::new(IpAddr::V4(ip), port);
+/// let addr = SocketAddr::new(IpAddr::V4(ip), 3000);
 /// 
 /// axum::Server::bind(&addr)
 /// .serve(app.into_make_service_with_connect_info::<SocketAddr>())
 /// .await
 /// .unwrap();
+/// }
 /// ````
 pub async fn stdout_log<B>
 (
