@@ -3,7 +3,7 @@ pub mod discord;
 mod web;
 pub mod server;
 
-const DEBUG: bool = false;
+const DEBUG: bool = true;
 
 pub fn debug(msg: String, context: Option<String>)
 {

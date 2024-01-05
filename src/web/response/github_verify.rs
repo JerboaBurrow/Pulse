@@ -44,7 +44,7 @@ pub fn read_bytes(v: String) -> Vec<u8>
 
 pub async fn github_verify<B>
 (
-    State(app_state): State<Arc<Mutex<crate::server::Config>>>,
+    State(app_state): State<String>,
     headers: HeaderMap,
     request: Request<B>,
     next: Next<B>
@@ -82,7 +82,7 @@ where B: axum::body::HttpBody<Data = Bytes>
 
     let post_digest = Regex::new(r"sha256=").unwrap().replace_all(signature, "").into_owned().to_uppercase();
 
-    let token = app_state.lock().unwrap().token.clone();
+    let token = app_state.clone();
     let key = match PKey::hmac(token.as_bytes())
     {
         Ok(k) => k,

@@ -15,24 +15,6 @@ use axum::
     middleware
 };
 
-pub struct Config
-{
-    pub throttle: IpThrottler,
-    pub token: String
-}
-
-impl Config
-{
-    pub fn new(max_requests_per_second: f64, timeout_millis: u128, t: String) -> Config
-    {
-        Config 
-        {
-            throttle: IpThrottler::new(max_requests_per_second, timeout_millis),
-            token: t
-        }
-    }
-}
-
 pub struct Server
 {
     addr: SocketAddr,
@@ -53,16 +35,24 @@ impl Server
     -> Server
     {
 
-        let config = Config::new(10.0, 5000, token);
-        let app_state = Arc::new(Mutex::new(config));
+        let requests: IpThrottler = IpThrottler::new
+        (
+            10.0, 
+            5000
+        );
+
+        let throttle_state = Arc::new(Mutex::new(requests));
+
+        let authenticated_state = token;
+        
 
         Server
         {
             addr: SocketAddr::new(IpAddr::V4(Ipv4Addr::new(a,b,c,d)), port),
             router: Router::new()
             .route("/", post(|| async move {  }))
-            .layer(middleware::from_fn_with_state(app_state.clone(), github_verify))
-            .layer(middleware::from_fn_with_state(app_state.clone(), handle_throttle))
+            .layer(middleware::from_fn_with_state(authenticated_state.clone(), github_verify))
+            .layer(middleware::from_fn_with_state(throttle_state.clone(), handle_throttle))
 
         }
     }
