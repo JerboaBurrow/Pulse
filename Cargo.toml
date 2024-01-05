@@ -10,8 +10,16 @@ name = "pulse"
 path = "src/main.rs"
 
 [[bin]]
+name = "pulse_http"
+path = "src/main_http.rs"
+required-features=["http"]
+
+[[bin]]
 name = "post_discord"
 path = "src/post_discord.rs"
+
+[features]
+http = []
 
 [dependencies]
 tokio = { version = "1", features = ["full"] }

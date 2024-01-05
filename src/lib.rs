@@ -3,6 +3,9 @@ pub mod discord;
 pub mod web;
 pub mod server;
 
+#[cfg(feature = "http")]
+pub mod server_http;
+
 const DEBUG: bool = true;
 
 pub fn debug(msg: String, context: Option<String>)

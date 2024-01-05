@@ -5,7 +5,6 @@ use crate::web::response::github_verify::github_verify;
 
 use std::clone;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 use axum::extract::State;
@@ -15,15 +14,14 @@ use axum::
     Router, 
     middleware
 };
-use axum_server::tls_rustls::RustlsConfig;
 
-pub struct Server
+pub struct ServerHttp
 {
     addr: SocketAddr,
     router: Router
 }
 
-impl Server 
+impl ServerHttp
 {
     pub fn new 
     (
@@ -34,7 +32,7 @@ impl Server
         port: u16,
         token: String
     ) 
-    -> Server
+    -> ServerHttp
     {
 
         let requests: IpThrottler = IpThrottler::new
@@ -48,7 +46,7 @@ impl Server
         let authenticated_state = token;
         
 
-        Server
+        ServerHttp
         {
             addr: SocketAddr::new(IpAddr::V4(Ipv4Addr::new(a,b,c,d)), port),
             router: Router::new()
@@ -59,32 +57,15 @@ impl Server
         }
     }
 
-    pub fn get_addr(self: Server) -> SocketAddr
+    pub fn get_addr(self: ServerHttp) -> SocketAddr
     {
         self.addr
     }
 
-    pub async fn serve(self: Server, cert_path: String, key_path: String)
+    pub async fn serve(self: ServerHttp)
     {
-
-        // configure https
-
-        let config = match RustlsConfig::from_pem_file(
-            PathBuf::from(cert_path.clone()),
-            PathBuf::from(key_path.clone())
-        )
-        .await
-        {
-            Ok(c) => c,
-            Err(e) => 
-            {
-                println!("error while reading certificates in {} and key {}\n{}", cert_path, key_path, e);
-                std::process::exit(1);
-            }
-        };
-
-        axum_server::bind_rustls(self.addr, config)
-        .serve(self.router.into_make_service())
+        axum::Server::bind(&self.addr)
+        .serve(self.router.into_make_service_with_connect_info::<SocketAddr>())
         .await
         .unwrap();
     }
@@ -112,42 +93,8 @@ pub async fn serve(token: String) {
         3030
     };
 
-    let cert_path = if args.iter().any(|x| x == "-c")
-    {
-        let i = args.iter().position(|x| x == "-c").unwrap();
-        if i+1 < args.len()
-        {
-            args[i+1].clone()
-        }
-        else 
-        {
-            "./cert.pem".to_string()
-        }
-    }
-    else
-    {
-        "./cert.pem".to_string()
-    };
+    let server = ServerHttp::new(127,0,0,1,port,token);
 
-    let key_path = if args.iter().any(|x| x == "-k")
-    {
-        let i = args.iter().position(|x| x == "-k").unwrap();
-        if i+1 < args.len()
-        {
-            args[i+1].clone()
-        }
-        else 
-        {
-            "./key.pem".to_string()
-        }
-    }
-    else
-    {
-        "./key.pem".to_string()
-    };
-
-    let server = Server::new(127,0,0,1,port,token);
-
-    server.serve(cert_path, key_path).await
+    server.serve().await
 
 }
