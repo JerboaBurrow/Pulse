@@ -1,4 +1,4 @@
-//! Utility responses for the axum server
+//! Github POST verification
 
 use axum::extract::State;
 use axum::http::{StatusCode, HeaderMap};
@@ -41,6 +41,43 @@ pub fn read_bytes(v: String) -> Vec<u8>
     .collect()
 }
 
+/// Middleware to detect and verify a github POST request form a 
+/// Github webhook
+/// 
+/// The github user agent header must be of the form GitHub-Hookshot/xxx
+/// 
+/// The hmac provided by the hmac x-hub-signature-256, is checked against 
+/// the State(app_state) value and the bodies bytes
+/// 
+/// The body is only read after the user agent matches
+/// 
+/// # Example
+/// 
+/// ```rust
+/// use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+/// use std::sync::{Arc, Mutex};
+///
+/// use axum::
+/// {
+///     routing::post, 
+///     Router, 
+///     middleware
+/// };
+/// 
+/// let authenticated_state = "this_is_a_secret".to_string();
+/// 
+/// let app = Router::new()
+/// .route("/", post(|| async move {  }))
+/// .layer(middleware::from_fn_with_state(authenticated_state.clone(), github_verify))
+/// 
+/// let ip = Ipv4Addr::new(127,0,0,1);
+/// let addr = SocketAddr::new(IpAddr::V4(ip), port);
+/// 
+/// axum::Server::bind(&addr)
+/// .serve(app.into_make_service_with_connect_info::<SocketAddr>())
+/// .await
+/// .unwrap();
+/// ````
 pub async fn github_verify<B>
 (
     State(app_state): State<String>,
