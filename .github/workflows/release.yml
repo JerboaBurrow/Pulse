@@ -65,7 +65,7 @@ jobs:
         run: |
               mkdir linux windows macos
               ls
-              mv ubuntu-20.04 pulse
+              mv pulse-ubuntu-20.04 pulse
               chmod +x pulse
               tar cvpfz linux-x86_64.tar.gz pulse LICENSE
               mv pulse-windows-latest.exe pulse.exe
