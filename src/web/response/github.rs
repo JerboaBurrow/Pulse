@@ -338,10 +338,10 @@ async fn respond(action: GithubReleaseActionType, data: HashMap<String, serde_js
 
     let msg = format!
     (
-        "New release just dropped!\n  {} just got a newly {} release. \n\n  Check it out here: {}", 
+        "New release just dropped!\n  {} just got a newly {} release :confetti_ball: \n\n  Check it out here: {}", 
         data["repository"]["name"], 
         Into::<String>::into(action),
-        data["release"]["url"]
+        data["release"]["html_url"]
     );
 
     match post(disc, msg).await
