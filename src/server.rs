@@ -13,7 +13,7 @@ use axum::
 {
     routing::post, 
     Router, 
-    middleware
+    middleware, ServiceExt
 };
 use axum_server::tls_rustls::RustlsConfig;
 
@@ -84,7 +84,7 @@ impl Server
         };
 
         axum_server::bind_rustls(self.addr, config)
-        .serve(self.router.into_make_service())
+        .serve(self.router.into_make_service_with_connect_info::<SocketAddr>())
         .await
         .unwrap();
     }
