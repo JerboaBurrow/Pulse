@@ -13,8 +13,9 @@ use tokio::sync::Mutex;
 
 use axum::
 {
-    routing::post, 
+    routing::{post, get}, 
     Router, 
+    response::Redirect,
     middleware
 };
 
@@ -56,6 +57,7 @@ impl ServerHttp
             .route("/", post(|| async move {  }))
             .layer(middleware::from_fn_with_state(github, filter_github))
             .layer(middleware::from_fn_with_state(throttle_state.clone(), handle_throttle))
+            .route("/badge", get(|| async move {Redirect::permanent("https://badgen.net/badge/Pulse/live/green?icon=discord")}))
         }
     }
 
