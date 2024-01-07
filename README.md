@@ -1,6 +1,9 @@
 ## Pulse 
 ### A work in progress information bot linking Discord and Github, with more to come
 
+![Screenshot from 2024-01-06 14-21-18](https://github.com/JerboaBurrow/Pulse/assets/84378622/34a58459-a51d-4c80-9d1a-07d6f98551eb)
+
+
 - for now uses a Discord webhook for only posting messages
 - recieves POST requests (e.g. from github webhooks) to be processed into custom messages, which are then POST'd to Discord
     - so we can format the Github POST content to our hearts content
