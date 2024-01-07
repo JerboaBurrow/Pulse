@@ -2,9 +2,10 @@
 use crate::web::
 {
     throttle::{IpThrottler, handle_throttle},
-    response::github::{filter_github, GithubConfig},
+    response::github::{github_filter::filter_github, model::GithubConfig},
     request::discord::model::Webhook
 };
+
 
 use std::clone;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};

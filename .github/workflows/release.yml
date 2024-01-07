@@ -85,6 +85,6 @@ jobs:
           name: "release-${{ github.ref_name }}"
           tag_name: ${{ github.ref }}
           files: |
-            linux-x86_64.tar.gz
-            windows.zip
-            macOS.tar.gz
+            pulse-linux-x86_64.tar.gz
+            pulse-windows.zip
+            pulse-macOS.tar.gz

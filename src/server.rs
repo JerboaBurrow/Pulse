@@ -1,7 +1,7 @@
 use crate::web::
 {
     throttle::{IpThrottler, handle_throttle},
-    response::github::{filter_github, GithubConfig},
+    response::github::{github_filter::filter_github, model::GithubConfig},
     request::discord::model::Webhook
 };
 
@@ -13,7 +13,7 @@ use axum::
 {
     routing::post, 
     Router, 
-    middleware, ServiceExt
+    middleware
 };
 use axum_server::tls_rustls::RustlsConfig;
 

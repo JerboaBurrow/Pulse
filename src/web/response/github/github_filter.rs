@@ -19,73 +19,19 @@ use regex::Regex;
 
 use std::collections::HashMap;
 
-use crate::web::request::discord::{model::Webhook, post::post};
-
 use crate::util::{dump_bytes, read_bytes, strip_control_characters};
 
-#[derive(Clone)]
-pub struct GithubConfig
+use crate::web::response::github::
 {
-    token: String,
-    discord: Webhook
-}
-
-impl GithubConfig
-{
-    pub fn new(t: String, w: Webhook) -> GithubConfig
+    github_release::respond_release, 
+    github_starred::respond_starred,
+    model::
     {
-        GithubConfig {token: t, discord: w}
-    } 
-}
-
-#[derive(Debug)]
-enum GithubReleaseActionType
-{
-    CREATED,
-    DELETED,
-    EDITED,
-    PRERELEASED,
-    PUBLISHED,
-    RELEASED,
-    UNPUBLISHED,
-    UNKOWN
-}
-
-impl From<&str> for GithubReleaseActionType
-{
-    fn from(s: &str) -> GithubReleaseActionType
-    {
-        match s 
-        {
-            "created" => Self::CREATED,
-            "deleted" => Self::DELETED,
-            "edited" => Self::EDITED,
-            "prereleased" => Self::PRERELEASED,
-            "published" => Self::PUBLISHED,
-            "released" => Self::RELEASED,
-            "unpublished" => Self::UNPUBLISHED,
-            _ => Self::UNKOWN
-        }
+        GithubConfig,
+        GithubReleaseActionType,
+        GithubStarredActionType
     }
-}
-
-impl Into<String> for GithubReleaseActionType
-{
-    fn into(self: GithubReleaseActionType) -> String 
-    {
-        match self
-        {
-            GithubReleaseActionType::CREATED => "created".to_string(),
-            GithubReleaseActionType::DELETED => "deleted".to_string(),
-            GithubReleaseActionType::EDITED => "edited".to_string(),
-            GithubReleaseActionType::PRERELEASED => "prereleased".to_string(),
-            GithubReleaseActionType::PUBLISHED => "published".to_string(),
-            GithubReleaseActionType::RELEASED => "released".to_string(),
-            GithubReleaseActionType::UNPUBLISHED => "unpublished".to_string(),
-            _ => "unkown".to_string()
-        }
-    }
-}
+};
 
 /// Middleware to detect, verify, and respond to a github POST request from a 
 /// Github webhook
@@ -114,7 +60,7 @@ impl Into<String> for GithubReleaseActionType
 /// };
 /// 
 /// use pulse::web::request::discord::model::Webhook;
-/// use pulse::web::response::github::{filter_github, GithubConfig};
+/// use pulse::web::response::github::{github_filter::filter_github, model::GithubConfig};
 /// 
 /// pub async fn server() {
 /// 
@@ -176,7 +122,7 @@ where B: axum::body::HttpBody<Data = Bytes>
     {
         StatusCode::ACCEPTED => 
         {
-            Ok(github_release(app_state, bytes).await.into_response())
+            Ok(github_respond(app_state, bytes).await.into_response())
         },
         r => {Ok(r.into_response())}
     }
@@ -219,7 +165,7 @@ async fn github_verify
 
     let post_digest = Regex::new(r"sha256=").unwrap().replace_all(signature, "").into_owned().to_uppercase();
 
-    let token = app_state.token.clone();
+    let token = app_state.get_token().clone();
     let key = match PKey::hmac(token.as_bytes())
     {
         Ok(k) => k,
@@ -284,7 +230,7 @@ async fn github_verify
 
 /// Send format a message to send as a POST request to discord
 /// 
-async fn github_release
+async fn github_respond
 (
     app_state: GithubConfig,
     body: Bytes
@@ -305,17 +251,38 @@ async fn github_release
 
     if parsed_data.contains_key("action") 
     {
-        let action: GithubReleaseActionType = match parsed_data["action"].to_owned().as_str()
+        if parsed_data.contains_key("release")
         {
-            Some(s) => {s.into()},
-            None => 
+            let action: GithubReleaseActionType = match parsed_data["action"].to_owned().as_str()
             {
-                crate::debug(format!("action could not be parsed \n\nGot:\n {:?}", parsed_data["action"]), None);
-                return StatusCode::BAD_REQUEST;
-            }
-        };
-
-        return respond(action, parsed_data, app_state.discord).await;
+                Some(s) => {s.into()},
+                None => 
+                {
+                    crate::debug(format!("action could not be parsed \n\nGot:\n {:?}", parsed_data["action"]), None);
+                    return StatusCode::BAD_REQUEST;
+                }
+            };
+    
+            return respond_release(action, parsed_data, app_state.get_webhook()).await;
+        }
+        else if parsed_data.contains_key("starred_at")
+        {
+            let action: GithubStarredActionType = match parsed_data["action"].to_owned().as_str()
+            {
+                Some(s) => {s.into()},
+                None => 
+                {
+                    crate::debug(format!("action could not be parsed \n\nGot:\n {:?}", parsed_data["action"]), None);
+                    return StatusCode::BAD_REQUEST;
+                }
+            };
+    
+            return respond_starred(action, parsed_data, app_state.get_webhook()).await;
+        }
+        else
+        {
+            return StatusCode::OK;
+        }
     }
     else
     {
@@ -323,35 +290,4 @@ async fn github_release
         return StatusCode::BAD_REQUEST;
     }
 
-}
-
-async fn respond(action: GithubReleaseActionType, data: HashMap<String, serde_json::Value>, disc: Webhook) -> StatusCode
-{
-    crate::debug(format!("Processing github release payload: {:?}", action), None);
-
-    match action 
-    {
-        GithubReleaseActionType::CREATED => {}
-        GithubReleaseActionType::PUBLISHED => {},
-        _ => {return StatusCode::OK}
-    };
-
-    let msg = format!
-    (
-        "New release just dropped!\n  {} just got a newly {} release :confetti_ball: \n\n  Check it out here: {}", 
-        data["repository"]["name"], 
-        Into::<String>::into(action),
-        data["release"]["html_url"]
-    );
-
-    match post(disc, msg).await
-    {
-        Ok(_) => StatusCode::OK,
-        Err(e) => 
-        {
-            crate::debug(format!("error while sending to discord {}", e), None);
-            StatusCode::INTERNAL_SERVER_ERROR
-        }
-    }
-    
 }
