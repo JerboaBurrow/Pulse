@@ -1,12 +1,15 @@
 use std::collections::HashMap;
 
+use std::sync::Arc;
+use tokio::sync::Mutex;
+
 use reqwest::StatusCode;
 
-use crate::web::request::discord::{model::Webhook, post::post};
+use crate::{web::{discord::request::post::post, github::model::GithubConfig}, stats::io::collect};
 
 use super::model::GithubStarredActionType;
 
-pub async fn respond_starred(action: GithubStarredActionType, data: HashMap<String, serde_json::Value>, disc: Webhook) -> StatusCode
+pub async fn respond_starred(action: GithubStarredActionType, data: HashMap<String, serde_json::Value>, app_state: Arc<Mutex<GithubConfig>>) -> StatusCode
 {
     crate::debug(format!("Processing github starred payload: {:?}", action), None);
 
@@ -28,6 +31,8 @@ pub async fn respond_starred(action: GithubStarredActionType, data: HashMap<Stri
     {
         return StatusCode::INTERNAL_SERVER_ERROR
     };
+
+    crate::debug(format!("Extracted name {:?}", name), None);
 
     let msg = match action
     {
@@ -52,7 +57,16 @@ pub async fn respond_starred(action: GithubStarredActionType, data: HashMap<Stri
         _ => {return StatusCode::INTERNAL_SERVER_ERROR}
     };
 
-    match post(disc, msg).await
+    crate::debug(format!("Formatted message {:?}", msg), None);
+
+    collect(app_state.clone(), data.clone()).await;
+
+    if crate::DONT_MESSAGE_ON_PRIVATE_REPOS && data["repository"]["private"].as_bool().is_some_and(|x|x)
+    {
+        return StatusCode::OK;
+    }
+
+    match post(app_state.lock().await.get_webhook(), msg).await
     {
         Ok(_) => StatusCode::OK,
         Err(e) => 

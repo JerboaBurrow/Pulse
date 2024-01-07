@@ -1,3 +1,4 @@
 pub mod throttle;
 pub mod response;
-pub mod request;
+pub mod github;
+pub mod discord;

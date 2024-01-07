@@ -1,4 +1,5 @@
-use pulse::{server::Server, web::request::discord::model::Webhook};
+use pulse::{server::Server, web::discord::request::model::Webhook, stats};
+use tokio::task::spawn;
 
 #[tokio::main]
 async fn main() {
@@ -97,6 +98,7 @@ async fn main() {
         "./key.pem".to_string()
     };
 
+    let _stats_watcher = spawn(stats::io::watch(Webhook::new(disc_url.clone())));
 
     let server = Server::new(0,0,0,0, port,token, Webhook::new(disc_url));
 

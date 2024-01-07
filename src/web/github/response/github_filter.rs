@@ -18,20 +18,27 @@ use openssl::sign::Signer;
 use regex::Regex;
 
 use std::collections::HashMap;
+use std::sync::Arc;
+use tokio::sync::Mutex;
 
 use crate::util::{dump_bytes, read_bytes, strip_control_characters};
 
-use crate::web::response::github::
+use crate::web::github::
 {
-    github_release::respond_release, 
-    github_starred::respond_starred,
-    model::
+    model::GithubConfig,
+    response::
     {
-        GithubConfig,
-        GithubReleaseActionType,
-        GithubStarredActionType
+        github_release::respond_release, 
+        github_starred::respond_starred,
+        github_pushed::respond_pushed,
+        model::
+        {
+            GithubReleaseActionType,
+            GithubStarredActionType
+        }
     }
 };
+
 
 /// Middleware to detect, verify, and respond to a github POST request from a 
 /// Github webhook
@@ -50,7 +57,8 @@ use crate::web::response::github::
 /// 
 /// ```rust
 /// use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-/// use std::sync::{Arc, Mutex};
+/// use std::sync::Arc;
+/// use tokio::sync::Mutex;
 ///
 /// use axum::
 /// {
@@ -59,13 +67,16 @@ use crate::web::response::github::
 ///     middleware
 /// };
 /// 
-/// use pulse::web::request::discord::model::Webhook;
-/// use pulse::web::response::github::{github_filter::filter_github, model::GithubConfig};
+/// use pulse::web::
+/// {
+///    throttle::{IpThrottler, handle_throttle},
+///    github::{response::github_filter::filter_github, model::{GithubConfig, GithubStats}},
+///    discord::request::model::Webhook
+/// };
 /// 
 /// pub async fn server() {
 /// 
-///     let github = GithubConfig::new("secret".to_string(), Webhook::new("url".to_string()));
-/// 
+///     let github = Arc::new(Mutex::new(GithubConfig::new("token".to_string(), Webhook::new("url".to_string()), GithubStats::new())));
 ///     let app = Router::new()
 ///     .route("/", post(|| async move {  }))
 ///     .layer(middleware::from_fn_with_state(github, filter_github));
@@ -82,7 +93,7 @@ use crate::web::response::github::
 /// ````
 pub async fn filter_github<B>
 (
-    State(app_state): State<GithubConfig>,
+    State(app_state): State<Arc<Mutex<GithubConfig>>>,
     headers: HeaderMap,
     request: Request<B>,
     next: Next<B>
@@ -137,7 +148,7 @@ where B: axum::body::HttpBody<Data = Bytes>
 /// 
 async fn github_verify
 (
-    app_state: GithubConfig,
+    app_state: Arc<Mutex<GithubConfig>>,
     headers: HeaderMap,
     body: Bytes
 ) -> StatusCode
@@ -165,7 +176,7 @@ async fn github_verify
 
     let post_digest = Regex::new(r"sha256=").unwrap().replace_all(signature, "").into_owned().to_uppercase();
 
-    let token = app_state.get_token().clone();
+    let token = app_state.lock().await.get_token();
     let key = match PKey::hmac(token.as_bytes())
     {
         Ok(k) => k,
@@ -232,7 +243,7 @@ async fn github_verify
 /// 
 async fn github_respond
 (
-    app_state: GithubConfig,
+    app_state: Arc<Mutex<GithubConfig>>,
     body: Bytes
 ) -> StatusCode
 {
@@ -249,6 +260,14 @@ async fn github_respond
         }
     };
 
+    if crate::IGNORE_PRIVATE_REPOS && parsed_data.contains_key("repository")
+    {
+        if parsed_data["repository"]["private"].as_bool().is_some_and(|x|x)
+        {
+            return StatusCode::CONTINUE;
+        }
+    }
+
     if parsed_data.contains_key("action") 
     {
         if parsed_data.contains_key("release")
@@ -263,7 +282,7 @@ async fn github_respond
                 }
             };
     
-            return respond_release(action, parsed_data, app_state.get_webhook()).await;
+            return respond_release(action, parsed_data, app_state).await;
         }
         else if parsed_data.contains_key("starred_at")
         {
@@ -277,12 +296,16 @@ async fn github_respond
                 }
             };
     
-            return respond_starred(action, parsed_data, app_state.get_webhook()).await;
+            return respond_starred(action, parsed_data, app_state).await;
         }
         else
         {
             return StatusCode::OK;
         }
+    }
+    else if parsed_data.contains_key("pusher")
+    {
+        return respond_pushed(parsed_data, app_state).await;
     }
     else
     {

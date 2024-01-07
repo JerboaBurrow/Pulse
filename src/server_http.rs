@@ -1,17 +1,16 @@
-
 use crate::web::
 {
     throttle::{IpThrottler, handle_throttle},
-    response::github::{github_filter::filter_github, model::GithubConfig},
-    request::discord::model::Webhook
+    github::{response::github_filter::filter_github, model::{GithubConfig, GithubStats}},
+    discord::request::model::Webhook
 };
 
+use crate::stats;
 
-use std::clone;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
+use tokio::sync::Mutex;
 
-use axum::extract::State;
 use axum::
 {
     routing::post, 
@@ -48,8 +47,8 @@ impl ServerHttp
 
         let throttle_state = Arc::new(Mutex::new(requests));
 
-        let github = GithubConfig::new(token, disc);
-
+        let github = Arc::new(Mutex::new(GithubConfig::new(token, disc.clone(), GithubStats::new())));
+        
         ServerHttp
         {
             addr: SocketAddr::new(IpAddr::V4(Ipv4Addr::new(a,b,c,d)), port),
@@ -57,7 +56,6 @@ impl ServerHttp
             .route("/", post(|| async move {  }))
             .layer(middleware::from_fn_with_state(github, filter_github))
             .layer(middleware::from_fn_with_state(throttle_state.clone(), handle_throttle))
-
         }
     }
 

@@ -1,12 +1,15 @@
 use std::collections::HashMap;
 
+use std::sync::Arc;
+use tokio::sync::Mutex;
+
 use reqwest::StatusCode;
 
-use crate::web::request::discord::{model::Webhook, post::post};
+use crate::web::{discord::request::post::post, github::model::GithubConfig};
 
 use super::model::GithubReleaseActionType;
 
-pub async fn respond_release(action: GithubReleaseActionType, data: HashMap<String, serde_json::Value>, disc: Webhook) -> StatusCode
+pub async fn respond_release(action: GithubReleaseActionType, data: HashMap<String, serde_json::Value>, app_state: Arc<Mutex<GithubConfig>>) -> StatusCode
 {
     crate::debug(format!("Processing github release payload: {:?}", action), None);
 
@@ -38,7 +41,12 @@ pub async fn respond_release(action: GithubReleaseActionType, data: HashMap<Stri
         data["release"]["html_url"].as_str().unwrap()
     );
 
-    match post(disc, msg).await
+    if crate::DONT_MESSAGE_ON_PRIVATE_REPOS && data["repository"]["private"] == true
+    {
+        return StatusCode::OK;
+    }
+    
+    match post(app_state.lock().await.get_webhook(), msg).await
     {
         Ok(_) => StatusCode::OK,
         Err(e) => 

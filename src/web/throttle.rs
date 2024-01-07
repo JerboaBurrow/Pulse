@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 use std::net::{SocketAddr, Ipv4Addr, IpAddr};
 use std::time::Instant;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
+use tokio::sync::Mutex;
 
 use axum::
 {
@@ -104,7 +105,7 @@ pub async fn handle_throttle<B>
 ) -> Result<Response, StatusCode>
 {
 
-    if state.lock().unwrap().is_limited(addr)
+    if state.lock().await.is_limited(addr)
     {
         Err(StatusCode::TOO_MANY_REQUESTS)
     }

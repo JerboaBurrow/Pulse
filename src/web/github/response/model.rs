@@ -1,30 +1,3 @@
-use crate::web::request::discord::model::Webhook;
-
-#[derive(Clone)]
-pub struct GithubConfig
-{
-    token: String,
-    discord: Webhook
-}
-
-impl GithubConfig
-{
-    pub fn new(t: String, w: Webhook) -> GithubConfig
-    {
-        GithubConfig {token: t, discord: w}
-    } 
-
-    pub fn get_token(self: GithubConfig) -> String
-    {
-        self.token
-    }
-
-    pub fn get_webhook(self: GithubConfig) -> Webhook
-    {
-        self.discord
-    }
-}
-
 #[derive(Debug)]
 pub enum GithubReleaseActionType
 {
