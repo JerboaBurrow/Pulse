@@ -1,4 +1,8 @@
 ## Pulse 
+<a href="https://discord.gg/SBeMPQtuB5">
+<img src=https://pulse.jerboa.app:3030/badge alt="Pulse status badge. If this text is visible Pulse is sleeping."></img>
+</a>
+
 ### A work in progress information bot linking Discord and Github, with more to come
 
 ![Screenshot from 2024-01-06 14-21-18](https://github.com/JerboaBurrow/Pulse/assets/84378622/34a58459-a51d-4c80-9d1a-07d6f98551eb)
