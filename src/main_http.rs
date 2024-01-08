@@ -1,7 +1,6 @@
 #[cfg(feature = "http")]
 
 use pulse::{server_http::ServerHttp, web::discord::request::model::Webhook, stats};
-use tokio::task::spawn;
 
 #[cfg(feature = "http")]
 #[tokio::main]
@@ -66,8 +65,6 @@ async fn main() {
     {
         3030
     };
-
-    let _stats_watcher = spawn(stats::io::watch(Webhook::new(disc_url.clone())));
 
     let server = ServerHttp::new(0,0,0,0, port,token, Webhook::new(disc_url));
 

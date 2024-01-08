@@ -15,6 +15,7 @@ use std::time::{Duration, SystemTime};
 use std::thread::sleep;
 
 const STATS_PATH: &str = "repo.stats";
+const LOG_FREQUENCY_MINUTES: u64 = 60; 
 
 pub async fn collect(stats: Arc<Mutex<GithubConfig>>, data: HashMap<String, serde_json::Value>)
 {
@@ -52,42 +53,44 @@ pub async fn collect(stats: Arc<Mutex<GithubConfig>>, data: HashMap<String, serd
 
     held_stats.get_stats().repos.get_mut(&name).unwrap().update(new_stats);
 
-
-    if Path::new(STATS_PATH).exists()
-    {
-        match std::fs::copy(STATS_PATH, format!("{}.bk",STATS_PATH))
-        {
-            Ok(_) => {},
-            Err(why) => 
-            {
-                crate::debug(format!("error {} copying stats to {}.bk", why, STATS_PATH), None);
-                return
-            }
-        }
-    }
-
-    match serde_json::to_string_pretty(held_stats.get_stats())
-    {
-        Ok(se) => 
-        {
-            write_file(STATS_PATH, se.as_bytes())
-        },
-        Err(why) => 
-        {
-            crate::debug(format!("error {} writing stats to {}", why, STATS_PATH), None);
-            return
-        }
-    }
-
-    crate::debug(format!("wrote data"), None);
 }
 
-pub async fn watch(disc: Webhook)
+pub async fn watch(disc: Webhook, stats: Arc<Mutex<GithubConfig>>)
 {
     let mut last_message = SystemTime::UNIX_EPOCH;
     loop 
     {
+        let mut held_stats = stats.lock().await;
+
         let date = Local::now();
+
+        if Path::new(STATS_PATH).exists()
+        {
+            match std::fs::copy(STATS_PATH, format!("{}.bk",STATS_PATH))
+            {
+                Ok(_) => {},
+                Err(why) => 
+                {
+                    crate::debug(format!("error {} copying stats to {}.bk", why, STATS_PATH), None);
+                    return
+                }
+            }
+        }
+    
+        match serde_json::to_string_pretty(held_stats.get_stats())
+        {
+            Ok(se) => 
+            {
+                write_file(STATS_PATH, se.as_bytes())
+            },
+            Err(why) => 
+            {
+                crate::debug(format!("error {} writing stats to {}", why, STATS_PATH), None);
+                return
+            }
+        }
+    
+        crate::debug(format!("wrote data"), None);
 
         if date.weekday() == chrono::Weekday::Fri && last_message.elapsed().unwrap().as_secs() > 24*60*60
         {
@@ -149,8 +152,36 @@ pub async fn watch(disc: Webhook)
                 Ok(_) => {},
                 Err(e) => {crate::debug(format!("error posting message to discord {}", e), Some("stats watch".to_string()))}
             }
+
+            held_stats.get_stats().repos.clear();
+
+            if Path::new(STATS_PATH).exists()
+            {
+                if !Path::new(format!("{}/log",STATS_PATH).as_str()).exists()
+                {
+                    match std::fs::create_dir("/some/dir")
+                    {
+                        Ok(_) => {},
+                        Err(why) => 
+                        {
+                            crate::debug(format!("error {} while creating log dir {}", why, format!("{}/log",STATS_PATH).as_str()), None);
+                            return
+                        }
+                    }
+                }
+                
+                match std::fs::copy(STATS_PATH, format!("log/stats-{}",date))
+                {
+                    Ok(_) => {},
+                    Err(why) => 
+                    {
+                        crate::debug(format!("error {} copying stats to log/stats-{}", why, date), None);
+                        return
+                    }
+                }
+            }
         }
 
-        sleep(Duration::from_secs(60*60));
+        sleep(Duration::from_secs(LOG_FREQUENCY_MINUTES*60));
     }
 }

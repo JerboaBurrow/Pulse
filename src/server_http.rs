@@ -5,6 +5,7 @@ use crate::web::
     discord::request::model::Webhook
 };
 
+use tokio::task::spawn;
 use crate::stats;
 
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
@@ -50,6 +51,8 @@ impl ServerHttp
 
         let github = Arc::new(Mutex::new(GithubConfig::new(token, disc.clone(), GithubStats::new())));
         
+        let _stats_watcher = spawn(stats::io::watch(Webhook::new(disc.get_addr()), github.clone()));
+
         ServerHttp
         {
             addr: SocketAddr::new(IpAddr::V4(Ipv4Addr::new(a,b,c,d)), port),

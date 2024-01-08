@@ -5,6 +5,8 @@ use crate::web::
     discord::request::model::Webhook
 };
 
+use tokio::task::spawn;
+
 use crate::stats;
 
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
@@ -50,6 +52,8 @@ impl Server
         let throttle_state = Arc::new(Mutex::new(requests));
 
         let github = Arc::new(Mutex::new(GithubConfig::new(token, disc.clone(), GithubStats::new())));
+
+        let _stats_watcher = spawn(stats::io::watch(Webhook::new(disc.get_addr()), github.clone()));
 
         Server
         {
