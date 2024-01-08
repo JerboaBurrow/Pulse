@@ -15,6 +15,7 @@
 
 - [x] support for HTTPS POST receipts (*HTTP as a cargo build option*)
 - [x] verify POST's are from github using the webhook secret
+- [x] starred formatting 
 - [ ] Release formatting (create, publish)
 - [ ] Issue formatting (e.g. when tagged with bug)
 - [ ] PR formatting (for new pr's and for successful merges)
