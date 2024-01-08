@@ -7,6 +7,11 @@ on:
     paths-ignore:
       - 'doc/**'
       - '.github/**'
+      - 'README.md'
+      - 'LICENSE'
+      - '.gitignore'
+      - 'CONTRIBUTING'
+      
   workflow_dispatch:
 
 

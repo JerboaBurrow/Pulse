@@ -1,20 +1,25 @@
 ## Pulse 
+<a href="https://discord.gg/SBeMPQtuB5">
+<img width="auto" height="24px" src=https://pulse.jerboa.app:3030/badge alt="Pulse status badge, with a link to the Discord channel. If this text is visible Pulse is sleeping."></img>
+</p>
+</a>
+
 ### A work in progress information bot linking Discord and Github, with more to come
 
 ![Screenshot from 2024-01-06 14-21-18](https://github.com/JerboaBurrow/Pulse/assets/84378622/34a58459-a51d-4c80-9d1a-07d6f98551eb)
 
-
-- for now uses a Discord webhook for only posting messages
 - recieves POST requests (e.g. from github webhooks) to be processed into custom messages, which are then POST'd to Discord
     - so we can format the Github POST content to our hearts content
  
 ### Roadmap
 
-- [x] support for https POST receipts
-- [x] support for http POST receipts (as a cargo build option)
+- [x] support for HTTPS POST receipts (*HTTP as a cargo build option*)
 - [x] verify POST's are from github using the webhook secret
-- [ ] Release formatting
-- [ ] Pre-release formatting
+- [ ] Release formatting (create, publish)
+- [ ] Issue formatting (e.g. when tagged with bug)
+- [ ] PR formatting (for new pr's and for successful merges)
+- [ ] hot loading of formatting templates, webhook, and github HMAC token
+- [ ] support multiple webhook end-points
 
 ### Setup
 
