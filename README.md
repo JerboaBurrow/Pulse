@@ -28,28 +28,45 @@ You can host on localhost, or via a remote server with http or https
 
 #### Configuration files
 
-Create a ```config.json``` specifying hmac secrets and Discord webhook endpoints e.g.
+Create a ```event_config.json``` specifying hmac secrets and Discord webhook endpoints, and templates for responses:
 
 ```json
 {
     "github_released":
     {
         "hmac": "this_is_secret_number_one",
-        "template": "New release!",
-        "end_point": "https://discord.com/api/webhooks/webhook_path/one"
+        "template": "Newly <action> release for <respository/name>!",
+        "end_point": { "addr": "https://discord.com/api/webhooks/a/webhook" }
     },
     "github_starred":
     {
-        "hmac": "this_is_secret_number_two",
-        "template": "New star!",
-        "end_point": "https://discord.com/api/webhooks/webhook_path/one"
+        "hmac": "this_is_secret_number_one",
+        "template": "A star was <action> for <repository/name>!",
+        "end_point": { "addr": "https://discord.com/api/webhooks/a/webhook" }
     },
     "github_pushed":
     {
         "hmac": "this_is_secret_number_two",
         "template": "New push!",
-        "end_point": "https://discord.com/api/webhooks/webhook_path/two"
+        "end_point": { "addr": "https://discord.com/api/webhooks/a/webhook" }
+    },
+    "github_ping":
+    {
+        "hmac": "this_is_secret_number_three",
+        "template": "New ping!",
+        "end_point": { "addr": "https://discord.com/api/webhooks/another/webhook" }
     }
+}
+```
+
+and a ```config.json``` for the server parameters
+
+```json
+{
+    "port": 3030,
+    "stats_endpoint": { "addr": "https://discord.com/api/webhooks/statistics/webhook" },
+    "cert_path": "",
+    "key_path": ""
 }
 ```
 
