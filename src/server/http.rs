@@ -1,16 +1,14 @@
 use crate::web::
 {
     throttle::{IpThrottler, handle_throttle},
-    github::{response::github_filter::filter_github, model::{GithubConfig, GithubStats}},
+    github::{response::github_filter::filter_github, model::GithubStats},
     discord::request::model::Webhook
 };
 
 use tokio::task::spawn;
-
 use crate::stats;
 
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
-use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
@@ -18,17 +16,19 @@ use axum::
 {
     routing::{post, get}, 
     Router, 
-    middleware, response::Redirect
+    response::Redirect,
+    middleware
 };
-use axum_server::tls_rustls::RustlsConfig;
 
-pub struct Server
+use super::model::AppState;
+
+pub struct ServerHttp
 {
     addr: SocketAddr,
     router: Router
 }
 
-impl Server 
+impl ServerHttp
 {
     pub fn new 
     (
@@ -37,10 +37,9 @@ impl Server
         c: u8,
         d: u8,
         port: u16,
-        token: String,
-        disc: Webhook,
+        disc: Webhook
     ) 
-    -> Server
+    -> ServerHttp
     {
 
         let requests: IpThrottler = IpThrottler::new
@@ -51,11 +50,11 @@ impl Server
 
         let throttle_state = Arc::new(Mutex::new(requests));
 
-        let github = Arc::new(Mutex::new(GithubConfig::new(token, disc.clone(), GithubStats::new())));
-
+        let github = Arc::new(Mutex::new(AppState::new(GithubStats::new())));
+        
         let _stats_watcher = spawn(stats::io::watch(Webhook::new(disc.get_addr()), github.clone()));
 
-        Server
+        ServerHttp
         {
             addr: SocketAddr::new(IpAddr::V4(Ipv4Addr::new(a,b,c,d)), port),
             router: Router::new()
@@ -66,31 +65,14 @@ impl Server
         }
     }
 
-    pub fn get_addr(self: Server) -> SocketAddr
+    pub fn get_addr(self: ServerHttp) -> SocketAddr
     {
         self.addr
     }
 
-    pub async fn serve(self: Server, cert_path: String, key_path: String)
+    pub async fn serve(self: ServerHttp)
     {
-
-        // configure https
-
-        let config = match RustlsConfig::from_pem_file(
-            PathBuf::from(cert_path.clone()),
-            PathBuf::from(key_path.clone())
-        )
-        .await
-        {
-            Ok(c) => c,
-            Err(e) => 
-            {
-                println!("error while reading certificates in {} and key {}\n{}", cert_path, key_path, e);
-                std::process::exit(1);
-            }
-        };
-
-        axum_server::bind_rustls(self.addr, config)
+        axum::Server::bind(&self.addr)
         .serve(self.router.into_make_service_with_connect_info::<SocketAddr>())
         .await
         .unwrap();

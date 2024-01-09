@@ -1,4 +1,6 @@
-#[derive(Clone)]
+use serde::{Serialize, Deserialize};
+
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Webhook 
 {
     addr: String

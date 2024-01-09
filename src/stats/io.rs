@@ -2,14 +2,15 @@ use std::cmp::min;
 use std::path::Path;
 use std::{sync::Arc, collections::HashMap};
 
-use chrono::{Local, Datelike, Timelike, DateTime};
+use chrono::{Local, Datelike};
 use tokio::sync::Mutex;
 
 use crate::DONT_MESSAGE_ON_PRIVATE_REPOS;
 use crate::util::{write_file, read_file_utf8};
 use crate::web::discord::request::model::Webhook;
 use crate::web::discord::request::post::post;
-use crate::web::github::model::{GithubStats, GithubRepoStats, GithubConfig};
+use crate::web::github::model::{GithubStats, GithubRepoStats};
+use crate::server::model::AppState;
 
 use std::time::{Duration, SystemTime};
 use std::thread::sleep;
@@ -17,7 +18,7 @@ use std::thread::sleep;
 const STATS_PATH: &str = "repo.stats";
 const LOG_FREQUENCY_MINUTES: u64 = 60; 
 
-pub async fn collect(stats: Arc<Mutex<GithubConfig>>, data: HashMap<String, serde_json::Value>)
+pub async fn collect(stats: Arc<Mutex<AppState>>, data: HashMap<String, serde_json::Value>)
 {
 
     let mut held_stats = stats.lock().await;
@@ -46,16 +47,16 @@ pub async fn collect(stats: Arc<Mutex<GithubConfig>>, data: HashMap<String, serd
 
     let new_stats = GithubRepoStats {stars: stars, pushes: push};
 
-    if !held_stats.get_stats().repos.contains_key(&name)
+    if !held_stats.get_github_stats().repos.contains_key(&name)
     {
-        held_stats.get_stats().repos.insert(name.to_string(), GithubRepoStats::new());
+        held_stats.get_github_stats().repos.insert(name.to_string(), GithubRepoStats::new());
     }
 
-    held_stats.get_stats().repos.get_mut(&name).unwrap().update(new_stats);
+    held_stats.get_github_stats().repos.get_mut(&name).unwrap().update(new_stats);
 
 }
 
-pub async fn watch(disc: Webhook, stats: Arc<Mutex<GithubConfig>>)
+pub async fn watch(disc: Webhook, stats: Arc<Mutex<AppState>>)
 {
     let mut last_message = SystemTime::UNIX_EPOCH;
     loop 
@@ -77,7 +78,7 @@ pub async fn watch(disc: Webhook, stats: Arc<Mutex<GithubConfig>>)
             }
         }
     
-        match serde_json::to_string_pretty(held_stats.get_stats())
+        match serde_json::to_string_pretty(held_stats.get_github_stats())
         {
             Ok(se) => 
             {
@@ -153,7 +154,7 @@ pub async fn watch(disc: Webhook, stats: Arc<Mutex<GithubConfig>>)
                 Err(e) => {crate::debug(format!("error posting message to discord {}", e), Some("stats watch".to_string()))}
             }
 
-            held_stats.get_stats().repos.clear();
+            held_stats.get_github_stats().repos.clear();
 
             if Path::new(STATS_PATH).exists()
             {

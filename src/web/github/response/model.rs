@@ -1,5 +1,5 @@
 #[derive(Debug)]
-pub enum GithubReleaseActionType
+pub enum GithubReleasedActionType
 {
     CREATED,
     DELETED,
@@ -11,10 +11,10 @@ pub enum GithubReleaseActionType
     UNKOWN
 }
 
-impl From<&str> for GithubReleaseActionType
+impl From<&str> for GithubReleasedActionType
 {
     
-    fn from(s: &str) -> GithubReleaseActionType
+    fn from(s: &str) -> GithubReleasedActionType
     {
         match s 
         {
@@ -30,19 +30,19 @@ impl From<&str> for GithubReleaseActionType
     }
 }
 
-impl Into<String> for GithubReleaseActionType
+impl Into<String> for GithubReleasedActionType
 {
-    fn into(self: GithubReleaseActionType) -> String 
+    fn into(self: GithubReleasedActionType) -> String 
     {
         match self
         {
-            GithubReleaseActionType::CREATED => "created".to_string(),
-            GithubReleaseActionType::DELETED => "deleted".to_string(),
-            GithubReleaseActionType::EDITED => "edited".to_string(),
-            GithubReleaseActionType::PRERELEASED => "prereleased".to_string(),
-            GithubReleaseActionType::PUBLISHED => "published".to_string(),
-            GithubReleaseActionType::RELEASED => "released".to_string(),
-            GithubReleaseActionType::UNPUBLISHED => "unpublished".to_string(),
+            GithubReleasedActionType::CREATED => "created".to_string(),
+            GithubReleasedActionType::DELETED => "deleted".to_string(),
+            GithubReleasedActionType::EDITED => "edited".to_string(),
+            GithubReleasedActionType::PRERELEASED => "prereleased".to_string(),
+            GithubReleasedActionType::PUBLISHED => "published".to_string(),
+            GithubReleasedActionType::RELEASED => "released".to_string(),
+            GithubReleasedActionType::UNPUBLISHED => "unpublished".to_string(),
             _ => "unkown".to_string()
         }
     }

@@ -3,3 +3,4 @@
 target/
 *.stats*
 .vscode
+config.json

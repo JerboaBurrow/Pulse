@@ -1,29 +1,9 @@
-use pulse::{server::Server, web::discord::request::model::Webhook, stats};
+use pulse::{server::https::Server, web::discord::request::model::Webhook};
 
 #[tokio::main]
 async fn main() {
 
     let args: Vec<String> = std::env::args().collect();
-
-    let token = if args.iter().any(|x| x == "-t")
-    {
-        let i = args.iter().position(|x| x == "-t").unwrap();
-
-        if i+1 < args.len()
-        {
-            args[i+1].clone()
-        }
-        else
-        {
-            println!("Authentication token not provided, please provide -t token");
-            std::process::exit(1);
-        }
-    }
-    else
-    {
-        println!("Authentication token not provided, please provide -t token");
-        std::process::exit(1);
-    };
 
     let disc_url = if args.iter().any(|x| x == "-w")
     {
@@ -97,7 +77,7 @@ async fn main() {
         "./key.pem".to_string()
     };
 
-    let server = Server::new(0,0,0,0, port,token, Webhook::new(disc_url));
+    let server = Server::new(0,0,0,0, port, Webhook::new(disc_url));
 
     server.serve(cert_path, key_path).await;
 

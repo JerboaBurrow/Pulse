@@ -1,24 +1,62 @@
 use std::collections::HashMap;
 
-use std::sync::Arc;
-use tokio::sync::Mutex;
+use axum::http::{HeaderMap, StatusCode};
+use axum::body::Bytes;
 
-use reqwest::StatusCode;
+use crate::web::discord;
+use crate::web::event::{EventConfig, read_config};
+use crate::web::event::Event;
 
-use crate::{web::github::model::GithubConfig, stats::io::collect};
+use super::github_filter::github_request_is_authentic;
 
-pub async fn respond_pushed(data: HashMap<String, serde_json::Value>, app_state: Arc<Mutex<GithubConfig>>) -> StatusCode
+pub const X_GTIHUB_EVENT: &str = "push";
+
+pub struct GithubPushed 
 {
-    let name = match data["repository"]["name"].as_str()
+    config: EventConfig
+}
+
+impl GithubPushed
+{
+    pub fn new() -> GithubPushed
     {
-        Some(s) => s,
-        None => {return StatusCode::INTERNAL_SERVER_ERROR}
-    };
+        GithubPushed { config: EventConfig::new() }
+    }
+}
 
-    crate::debug(format!("got a push to {}", name), None);
+impl Event for GithubPushed
+{
+    fn get_token(&self) -> String
+    {
+        self.config.get_token()
+    }
 
-    collect(app_state, data).await;
+    fn get_end_point(&self) -> discord::request::model::Webhook
+    {
+        self.config.get_end_point()
+    }
 
-    StatusCode::OK
+    fn load_config(&mut self)
+    {
+        self.config = read_config("github_pushed");
+    }
+
+    fn is_authentic(&self, headers: HeaderMap, body: Bytes) -> StatusCode
+    {
+        return github_request_is_authentic(self.get_token(), headers, body);
+    }
+
+    fn into_response(&self, data: HashMap<String, serde_json::Value>) -> (Option<String>, StatusCode)
+    {
+        let name = match data["repository"]["name"].as_str()
+        {
+            Some(s) => s,
+            None => {return (None, StatusCode::INTERNAL_SERVER_ERROR)}
+        };
     
+        crate::debug(format!("got a push to {}", name), None);
+
+
+        (None, StatusCode::OK)
+    }
 }

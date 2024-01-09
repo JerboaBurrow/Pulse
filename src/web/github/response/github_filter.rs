@@ -11,34 +11,27 @@ use axum::
 };
 
 use chrono::Local;
-use openssl::hash::MessageDigest;
-use openssl::memcmp;
-use openssl::pkey::PKey;
-use openssl::sign::Signer;
 use regex::Regex;
 
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
-use crate::util::{dump_bytes, read_bytes, strip_control_characters};
+use crate::server::model::AppState;
+use crate::stats::io::collect;
+use crate::util::strip_control_characters;
 
+use crate::web::discord::request::post::post;
+use crate::web::event::Event;
 use crate::web::github::
+response::
 {
-    model::GithubConfig,
-    response::
-    {
-        github_release::respond_release, 
-        github_starred::respond_starred,
-        github_pushed::respond_pushed,
-        model::
-        {
-            GithubReleaseActionType,
-            GithubStarredActionType
-        }
-    }
+    github_release, 
+    github_starred,
+    github_pushed,
 };
 
+use crate::web::is_authentic;
 
 /// Middleware to detect, verify, and respond to a github POST request from a 
 /// Github webhook
@@ -93,7 +86,7 @@ use crate::web::github::
 /// ````
 pub async fn filter_github<B>
 (
-    State(app_state): State<Arc<Mutex<GithubConfig>>>,
+    State(app_state): State<Arc<Mutex<AppState>>>,
     headers: HeaderMap,
     request: Request<B>,
     next: Next<B>
@@ -129,15 +122,85 @@ where B: axum::body::HttpBody<Data = Bytes>
         }
     };
 
-    return match github_verify(app_state.clone(), headers, bytes.clone()).await
+    let mut event: Box<dyn Event + Send> = match headers.contains_key("x-gitHub-event")
+    {
+        true => 
+        {
+            match std::str::from_utf8(headers["x-github-event"].as_bytes()).unwrap()
+            {
+                github_pushed::X_GTIHUB_EVENT => 
+                {
+                    Box::new(github_pushed::GithubPushed::new())
+                },
+                github_release::X_GTIHUB_EVENT =>
+                {
+                    Box::new(github_release::GithubReleased::new())
+                },
+                github_starred::X_GTIHUB_EVENT =>
+                {
+                    Box::new(github_starred::GithubStarred::new())
+                }
+                _ => return Ok(StatusCode::CONTINUE.into_response())
+            }
+        },
+        false => return Ok(StatusCode::BAD_REQUEST.into_response())
+    };
+
+    event.load_config();
+
+    match event.is_authentic(headers, bytes.clone())
     {
         StatusCode::ACCEPTED => 
         {
-            Ok(github_respond(app_state, bytes).await.into_response())
-        },
-        r => {Ok(r.into_response())}
-    }
+            let body = std::str::from_utf8(&bytes).unwrap().to_string();
 
+            let parsed_data: HashMap<String, serde_json::Value> = match serde_json::from_str(&strip_control_characters(body))
+            {
+                Ok(d) => d,
+                Err(e) => 
+                {
+                    crate::debug(format!("error parsing body: {}", e), None);
+                    return Ok(StatusCode::INTERNAL_SERVER_ERROR.into_response());
+                }
+            };
+
+            collect(app_state, parsed_data.clone()).await;
+
+            let response = event.into_response(parsed_data.clone());
+
+            if response.1 != StatusCode::OK
+            {
+                return Ok(response.1.into_response())
+            }
+
+            let status = match response.0
+            {
+                Some(msg) =>
+                {
+                    if crate::DONT_MESSAGE_ON_PRIVATE_REPOS && parsed_data["repository"]["private"].as_bool().is_some_and(|x|x)
+                    {
+                        StatusCode::OK
+                    }
+                    else
+                    {
+                        match post(event.get_end_point(), msg).await
+                        {
+                            Ok(_) => StatusCode::OK,
+                            Err(e) => 
+                            {
+                                crate::debug(format!("error while sending to discord {}", e), None);
+                                StatusCode::INTERNAL_SERVER_ERROR
+                            }
+                        }
+                    }
+                },
+                None => response.1
+            };
+
+            return Ok(status.into_response())
+        },
+        s => return Ok(s.into_response())
+    }
     
 }
 
@@ -146,9 +209,9 @@ where B: axum::body::HttpBody<Data = Bytes>
 /// Checks (hmac) the header x-hub-signature-256 comparing to the local token
 /// app_state.token with the passes body bytes
 /// 
-async fn github_verify
+pub fn github_request_is_authentic
 (
-    app_state: Arc<Mutex<GithubConfig>>,
+    token: String,
     headers: HeaderMap,
     body: Bytes
 ) -> StatusCode
@@ -174,143 +237,15 @@ async fn github_verify
         }
     };
 
-    let post_digest = Regex::new(r"sha256=").unwrap().replace_all(signature, "").into_owned().to_uppercase();
-
-    let token = app_state.lock().await.get_token();
-    let key = match PKey::hmac(token.as_bytes())
+    match is_authentic(token, signature.to_owned(), body.clone())
     {
-        Ok(k) => k,
-        Err(_) => 
-        {
-            crate::debug("key creation failure".to_string(), None);
-            return StatusCode::INTERNAL_SERVER_ERROR
-        }
+        StatusCode::ACCEPTED => {},
+        s => {return s}
     };
 
-    let mut signer = match Signer::new(MessageDigest::sha256(), &key)
-    {
-        Ok(k) => k,
-        Err(_) => 
-        {
-            crate::debug("signer creation failure".to_string(), None);
-            return StatusCode::INTERNAL_SERVER_ERROR
-        }
-    };
-    
-    match signer.update(&body)
-    {
-        Ok(k) => k,
-        Err(_) => 
-        {
-            crate::debug("signing update failure".to_string(), None);
-            return StatusCode::INTERNAL_SERVER_ERROR
-        }
-    };
-
-    let hmac = match signer.sign_to_vec()
-    {
-        Ok(k) => k,
-        Err(_) => 
-        {
-            crate::debug("sign failure".to_string(), None);
-            return StatusCode::INTERNAL_SERVER_ERROR
-        }
-    };
-
-    crate::debug(format!("post_digtest: {}, len: {}\nlocal hmac: {}, len: {}", post_digest, post_digest.len(), dump_bytes(&hmac), dump_bytes(&hmac).len()), None);
-
-    match memcmp::eq(&hmac, &read_bytes(post_digest.clone()))
-    {
-        true => {},
-        false => 
-        {
-            crate::debug(format!("bad signature: local/post\n{}\n{}", post_digest, dump_bytes(&hmac)), None);
-            return StatusCode::UNAUTHORIZED
-        }
-    }
-
-    // it is now safe to process the POST request
-
-    let body = std::str::from_utf8(&body).unwrap().to_string();
-
-    crate::debug(format!("[{}] Got request:\n\nheader:\n\n{:?}\n\nbody:\n\n{}", Local::now(), headers, body), None);
+    crate::debug(format!("[{}] Got request:\n\nheader:\n\n{:?}\n\nbody:\n\n{:?}", Local::now(), headers, body), None);
     
     StatusCode::ACCEPTED
    
 }
 
-/// Send format a message to send as a POST request to discord
-/// 
-async fn github_respond
-(
-    app_state: Arc<Mutex<GithubConfig>>,
-    body: Bytes
-) -> StatusCode
-{
-
-    let sbody = std::str::from_utf8(&body).unwrap().to_string();
-
-    let parsed_data: HashMap<String, serde_json::Value> = match serde_json::from_str(&strip_control_characters(sbody))
-    {
-        Ok(d) => d,
-        Err(e) => 
-        {
-            crate::debug(format!("error parsing body: {}", e), None);
-            return StatusCode::INTERNAL_SERVER_ERROR;
-        }
-    };
-
-    if crate::IGNORE_PRIVATE_REPOS && parsed_data.contains_key("repository")
-    {
-        if parsed_data["repository"]["private"].as_bool().is_some_and(|x|x)
-        {
-            return StatusCode::CONTINUE;
-        }
-    }
-
-    if parsed_data.contains_key("action") 
-    {
-        if parsed_data.contains_key("release")
-        {
-            let action: GithubReleaseActionType = match parsed_data["action"].to_owned().as_str()
-            {
-                Some(s) => {s.into()},
-                None => 
-                {
-                    crate::debug(format!("action could not be parsed \n\nGot:\n {:?}", parsed_data["action"]), None);
-                    return StatusCode::BAD_REQUEST;
-                }
-            };
-    
-            return respond_release(action, parsed_data, app_state).await;
-        }
-        else if parsed_data.contains_key("starred_at")
-        {
-            let action: GithubStarredActionType = match parsed_data["action"].to_owned().as_str()
-            {
-                Some(s) => {s.into()},
-                None => 
-                {
-                    crate::debug(format!("action could not be parsed \n\nGot:\n {:?}", parsed_data["action"]), None);
-                    return StatusCode::BAD_REQUEST;
-                }
-            };
-    
-            return respond_starred(action, parsed_data, app_state).await;
-        }
-        else
-        {
-            return StatusCode::OK;
-        }
-    }
-    else if parsed_data.contains_key("pusher")
-    {
-        return respond_pushed(parsed_data, app_state).await;
-    }
-    else
-    {
-        crate::debug(format!("no action entry in JSON payload \n\nGot:\n {:?}", parsed_data), None);
-        return StatusCode::BAD_REQUEST;
-    }
-
-}

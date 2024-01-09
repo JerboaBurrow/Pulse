@@ -3,9 +3,6 @@ pub mod server;
 pub mod stats;
 pub mod util;
 
-#[cfg(feature = "http")]
-pub mod server_http;
-
 const DEBUG: bool = true;
 
 /// Completely drop Github POST requests concerning private repos

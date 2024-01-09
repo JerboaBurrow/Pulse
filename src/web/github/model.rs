@@ -2,8 +2,6 @@ use std::collections::HashMap;
 
 use serde::{Serialize, Deserialize};
 
-use crate::web::discord::request::model::Webhook;
-
 #[derive(Clone, Serialize, Deserialize)]
 pub struct GithubRepoStats
 {
@@ -42,36 +40,5 @@ impl GithubStats
     pub fn new() -> GithubStats
     {
         GithubStats {repos: HashMap::new()}
-    }
-}
-
-#[derive(Clone)]
-pub struct GithubConfig
-{
-    token: String,
-    discord: Webhook,
-    stats: GithubStats
-}
-
-impl GithubConfig
-{
-    pub fn new(t: String, w: Webhook, s: GithubStats) -> GithubConfig
-    {
-        GithubConfig {token: t, discord: w, stats: s}
-    } 
-
-    pub fn get_token(&self) -> String
-    {
-        String::from(self.token.clone())
-    }
-
-    pub fn get_webhook(&self) -> Webhook
-    {
-        self.discord.clone()
-    }
-
-    pub fn get_stats(&mut self) -> &mut GithubStats
-    {
-        &mut self.stats
     }
 }
