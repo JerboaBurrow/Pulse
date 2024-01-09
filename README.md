@@ -24,7 +24,40 @@
 
 ### Setup
 
-### Example Google Cloud instance (free tier)
+You can host on localhost, or via a remote server with http or https
+
+#### Configuration files
+
+Create a ```config.json``` specifying hmac secrets and Discord webhook endpoints e.g.
+
+```json
+{
+    "github_released":
+    {
+        "hmac": "this_is_secret_number_one",
+        "template": "New release!",
+        "end_point": "https://discord.com/api/webhooks/webhook_path/one"
+    },
+    "github_starred":
+    {
+        "hmac": "this_is_secret_number_two",
+        "template": "New star!",
+        "end_point": "https://discord.com/api/webhooks/webhook_path/one"
+    },
+    "github_pushed":
+    {
+        "hmac": "this_is_secret_number_two",
+        "template": "New push!",
+        "end_point": "https://discord.com/api/webhooks/webhook_path/two"
+    }
+}
+```
+
+#### Localhost
+
+Just launch the serverr
+
+#### Example Google Cloud instance (free tier)
 
 The [gcloud free tier](https://cloud.google.com/free?hl=en) [allows for the following instance running 24/7:](https://cloud.google.com/free/docs/free-cloud-features#compute)
 
@@ -40,7 +73,7 @@ The [gcloud free tier](https://cloud.google.com/free?hl=en) [allows for the foll
 
 You may still see costs in the Google cloud console, or savings suggestions. You should not be charged though.
 
-#### CLI
+##### CLI
 
 Using the gloud cli this command should create an instance template for the free tier, which can be used to create instances
 
@@ -55,7 +88,7 @@ gcloud beta compute instance-templates create free-tier-template-http --project=
 --no-shielded-secure-boot --shielded-vtpm --shielded-integrity-monitoring --reservation-affinity=any
 ```
 
-#### Cloud console
+##### Cloud console
 
 - create an e2 in us-central1 (Iowa) for both zone and region
 - select e2-micro (0.25-2 vCPU 1GB memory)
