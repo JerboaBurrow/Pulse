@@ -10,7 +10,7 @@ use crate::web::discord;
 use std::path::Path;
 use crate::util::read_file_utf8;
 
-pub const CONFIG_PATH: &str = "config.json";
+pub const CONFIG_PATH: &str = "event_config.json";
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct EventConfig
@@ -77,7 +77,7 @@ pub fn read_config(name: &str) -> EventConfig
 
         match config.contains_key(name)
         {
-            true => config["name"].clone(),
+            true => config[name].clone(),
             false => 
             {
                 println!("Config for event, {}, not found in configuration file {}", name, CONFIG_PATH);

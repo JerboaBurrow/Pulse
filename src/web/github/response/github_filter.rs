@@ -33,6 +33,8 @@ response::
 
 use crate::web::is_authentic;
 
+use super::github_ping;
+
 /// Middleware to detect, verify, and respond to a github POST request from a 
 /// Github webhook
 /// 
@@ -141,6 +143,10 @@ where B: axum::body::HttpBody<Data = Bytes>
                 github_starred::X_GTIHUB_EVENT =>
                 {
                     Box::new(github_starred::GithubStarred::new())
+                },
+                github_ping::X_GTIHUB_EVENT => 
+                {
+                    Box::new(github_ping::GithubPing::new())
                 }
                 _ => return Ok(StatusCode::CONTINUE.into_response())
             }
@@ -179,7 +185,7 @@ where B: axum::body::HttpBody<Data = Bytes>
             {
                 Some(msg) =>
                 {
-                    if crate::DONT_MESSAGE_ON_PRIVATE_REPOS && parsed_data["repository"]["private"].as_bool().is_some_and(|x|x)
+                    if parsed_data.contains_key("repository") && crate::DONT_MESSAGE_ON_PRIVATE_REPOS && parsed_data["repository"]["private"].as_bool().is_some_and(|x|x)
                     {
                         StatusCode::OK
                     }

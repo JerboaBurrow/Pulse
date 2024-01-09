@@ -1,14 +1,14 @@
-use crate::web::
+use crate::{web::
 {
     throttle::{IpThrottler, handle_throttle},
     github::{response::github_filter::filter_github, model::GithubStats},
     discord::request::model::Webhook
-};
+}, util::read_file_utf8};
 
 use tokio::task::spawn;
 use crate::stats;
 
-use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+use std::{net::{IpAddr, Ipv4Addr, SocketAddr}, path::Path};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
@@ -20,7 +20,7 @@ use axum::
     middleware
 };
 
-use super::model::AppState;
+use super::model::{AppState, CONFIG_PATH, Config};
 
 pub struct ServerHttp
 {
@@ -35,12 +35,40 @@ impl ServerHttp
         a: u8,
         b: u8,
         c: u8,
-        d: u8,
-        port: u16,
-        disc: Webhook
+        d: u8
     ) 
     -> ServerHttp
     {
+
+        let config = if Path::new(CONFIG_PATH).exists()
+        {
+            let data = match read_file_utf8(CONFIG_PATH)
+            {
+                Some(d) => d,
+                None =>
+                {
+                    println!("Error reading configuration file {} no data", CONFIG_PATH);
+                    std::process::exit(1);
+                }
+            };
+
+            let config: Config = match serde_json::from_str(&data)
+            {
+                Ok(data) => {data},
+                Err(why) => 
+                {
+                    println!("Error reading configuration file {}\n{}", CONFIG_PATH, why);
+                    std::process::exit(1);
+                }
+            };
+
+            config
+        }
+        else 
+        {
+            println!("Error configuration file {} does not exist", CONFIG_PATH);
+            std::process::exit(1);
+        };
 
         let requests: IpThrottler = IpThrottler::new
         (
@@ -52,11 +80,11 @@ impl ServerHttp
 
         let github = Arc::new(Mutex::new(AppState::new(GithubStats::new())));
         
-        let _stats_watcher = spawn(stats::io::watch(Webhook::new(disc.get_addr()), github.clone()));
+        let _stats_watcher = spawn(stats::io::watch(config.get_end_point(), github.clone()));
 
         ServerHttp
         {
-            addr: SocketAddr::new(IpAddr::V4(Ipv4Addr::new(a,b,c,d)), port),
+            addr: SocketAddr::new(IpAddr::V4(Ipv4Addr::new(a,b,c,d)), config.get_port()),
             router: Router::new()
             .route("/", post(|| async move {  }))
             .layer(middleware::from_fn_with_state(github, filter_github))

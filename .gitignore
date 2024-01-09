@@ -4,3 +4,4 @@ target/
 *.stats*
 .vscode
 config.json
+event_config.json
