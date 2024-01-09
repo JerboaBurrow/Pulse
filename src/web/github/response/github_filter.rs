@@ -63,13 +63,15 @@ use crate::web::is_authentic;
 /// use pulse::web::
 /// {
 ///    throttle::{IpThrottler, handle_throttle},
-///    github::{response::github_filter::filter_github, model::{GithubConfig, GithubStats}},
+///    github::{response::github_filter::filter_github, model::GithubStats},
 ///    discord::request::model::Webhook
 /// };
 /// 
+/// use pulse::server::model::AppState;
+/// 
 /// pub async fn server() {
 /// 
-///     let github = Arc::new(Mutex::new(GithubConfig::new("token".to_string(), Webhook::new("url".to_string()), GithubStats::new())));
+///     let github = Arc::new(Mutex::new(AppState::new(GithubStats::new())));
 ///     let app = Router::new()
 ///     .route("/", post(|| async move {  }))
 ///     .layer(middleware::from_fn_with_state(github, filter_github));
