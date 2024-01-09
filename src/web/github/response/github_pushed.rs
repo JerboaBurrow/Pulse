@@ -4,7 +4,7 @@ use axum::http::{HeaderMap, StatusCode};
 use axum::body::Bytes;
 
 use crate::web::discord;
-use crate::web::event::{EventConfig, read_config};
+use crate::web::event::{EventConfig, read_config, expand_template};
 use crate::web::event::Event;
 
 use super::github_filter::github_request_is_authentic;
@@ -56,7 +56,6 @@ impl Event for GithubPushed
     
         crate::debug(format!("got a push to {}", name), None);
 
-
-        (None, StatusCode::OK)
+        (expand_template(self.config.get_template(), data), StatusCode::OK)
     }
 }

@@ -4,7 +4,7 @@ use axum::http::{HeaderMap, StatusCode};
 use axum::body::Bytes;
 
 use crate::web::discord;
-use crate::web::event::{EventConfig, read_config};
+use crate::web::event::{EventConfig, read_config, expand_template};
 use crate::web::event::Event;
 
 use super::github_filter::github_request_is_authentic;
@@ -48,16 +48,6 @@ impl Event for GithubPing
 
     fn into_response(&self, data: HashMap<String, serde_json::Value>) -> (Option<String>, StatusCode)
     {
-        let name = match data["zen"].as_str()
-        {
-            Some(s) => s,
-            None => {return (None, StatusCode::INTERNAL_SERVER_ERROR)}
-        };
-    
-        let msg = format!("got a ping \"{}\"  from github", name);
-        
-        crate::debug(format!("ping message: {}",msg), None);
-
-        (Some(msg), StatusCode::OK)
+        (expand_template(self.config.get_template(), data), StatusCode::OK)
     }
 }

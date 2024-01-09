@@ -19,7 +19,7 @@ mod test_template
 
         assert!(parsed_data["issue"].pointer("/repository_url").is_some());
         
-        let formatted = event::format(ISSUE_TEMPLATE_OK.to_string(), parsed_data);
+        let formatted = event::expand_template(ISSUE_TEMPLATE_OK.to_string(), parsed_data).unwrap();
         assert_eq!(formatted, "this is an issue template string the action was opened the repository url was https://api.github.com/repos/JerboaBurrow/test".to_string())
     }
 
@@ -30,7 +30,7 @@ mod test_template
 
         assert!(parsed_data["issue"].pointer("/a_non_existant_value").is_none());
         
-        let formatted = event::format(ISSUE_TEMPLATE_BAD.to_string(), parsed_data);
+        let formatted = event::expand_template(ISSUE_TEMPLATE_BAD.to_string(), parsed_data).unwrap();
         assert_eq!(formatted, "this is an issue template string the action was opened the repository url was <issue/a_non_existant_value>".to_string())
     }
 }

@@ -94,8 +94,14 @@ pub fn read_config(name: &str) -> EventConfig
     }
 }
 
-pub fn format(template: String, data: HashMap<String, serde_json::Value>) -> String
+pub fn expand_template(template: String, data: HashMap<String, serde_json::Value>) -> Option<String>
 {
+
+    if template == ""
+    {
+        return None
+    }
+
     let parameters = Regex::new(TEMPLATE_REPLACE_REGEX).unwrap();
     
     let mut formatted = template.clone();
@@ -120,9 +126,9 @@ pub fn format(template: String, data: HashMap<String, serde_json::Value>) -> Str
                
             }
         };
-        
+
         formatted = formatted.replace(var.as_str(), &value);
     }
 
-    formatted
+    Some(formatted)
 }

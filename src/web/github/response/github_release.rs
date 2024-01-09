@@ -2,9 +2,10 @@ use std::collections::HashMap;
 
 use axum::http::{HeaderMap, StatusCode};
 use axum::body::Bytes;
+use regex::Regex;
 
 use crate::web::discord;
-use crate::web::event::{EventConfig, read_config};
+use crate::web::event::{EventConfig, read_config, expand_template};
 use crate::web::event::Event;
 
 use super::github_filter::github_request_is_authentic;
@@ -82,35 +83,24 @@ impl Event for GithubReleased
             _ => {return (None, StatusCode::OK)}
         };
 
-        let name = if data["repository"]["name"].is_string()
+        let template = if data["repository"]["name"].is_string()
         {
             match data["repository"]["name"] == "Pulse" 
             {
-                true => "Pulse (that's me!)",
-                false => data["repository"]["name"].as_str().unwrap()
+               true => self.config.get_template().replacen("<repository/name>", "Pulse (that's me!)", 1),
+               false => {self.config.get_template()}
             }
         }
         else
         {
             return (None, StatusCode::INTERNAL_SERVER_ERROR)
         };
-
-        let msg = format!
-        (
-            "New release just dropped!\n  {} just got a newly {} release :confetti_ball: \n  Check it out here: {}", 
-            name,
-            Into::<String>::into(action),
-            data["release"]["html_url"].as_str().unwrap()
-        );
-
-    
-        crate::debug(format!("Formatted message {:?}", msg), None);
     
         if crate::DONT_MESSAGE_ON_PRIVATE_REPOS && data["repository"]["private"].as_bool().is_some_and(|x|x)
         {
             return (None, StatusCode::OK);
         }
 
-        (Some(msg), StatusCode::OK)
+        (expand_template(template, data), StatusCode::OK)
     }
 }
