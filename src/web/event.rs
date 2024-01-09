@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use axum::http::{StatusCode, HeaderMap};
 use axum::body::Bytes;
 
+use regex::Regex;
 use serde::{Serialize, Deserialize};
 
 use crate::web::discord;
@@ -11,6 +12,7 @@ use std::path::Path;
 use crate::util::read_file_utf8;
 
 pub const CONFIG_PATH: &str = "event_config.json";
+const TEMPLATE_REPLACE_REGEX: &str = "<[^<>]+>";
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct EventConfig
@@ -90,4 +92,37 @@ pub fn read_config(name: &str) -> EventConfig
         println!("Error configuration file {} does not exist", CONFIG_PATH);
         std::process::exit(1);
     }
+}
+
+pub fn format(template: String, data: HashMap<String, serde_json::Value>) -> String
+{
+    let parameters = Regex::new(TEMPLATE_REPLACE_REGEX).unwrap();
+    
+    let mut formatted = template.clone();
+    
+    for var in parameters.find_iter(&template)
+    {
+        let template = var.as_str().strip_prefix("<").unwrap().strip_suffix(">").unwrap();
+        let path: Vec<&str> = template.split("/").collect();
+
+        let value = match path.len()
+        {
+            0 => {var.as_str().to_string()},
+            1 => {format!("{}", data[path[0]]).replace("\"", "")},
+            _=> 
+            { 
+                let p = ["/", &path[1..path.len()].join("/")].join("");
+                match data[path[0]].pointer(&p)
+                {
+                    Some(v) => format!("{}", v).replace("\"", ""),
+                    None => var.as_str().to_string()
+                }
+               
+            }
+        };
+        
+        formatted = formatted.replace(var.as_str(), &value);
+    }
+
+    formatted
 }
