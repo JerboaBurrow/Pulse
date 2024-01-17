@@ -16,11 +16,16 @@
 - [x] support for HTTPS POST receipts (*HTTP as a cargo build option*)
 - [x] verify POST's are from github using the webhook secret
 - [x] starred formatting 
+- [x] hot loading of formatting templates, webhook endpoints, and github HMACs
+- [x] template interpolation, with interpolation data extracted from POST bodies.
+- [x] support multiple webhook end-points
+- [x] support multiple github webhook origins (i.e. multiple HMACs)
+- [ ] suppress messaging on private repos as config option 
+- [ ] select templates based upon POST body/header content
 - [ ] Release formatting (create, publish)
 - [ ] Issue formatting (e.g. when tagged with bug)
 - [ ] PR formatting (for new pr's and for successful merges)
-- [ ] hot loading of formatting templates, webhook, and github HMAC token
-- [ ] support multiple webhook end-points
+- [ ] statistics roundup (set frequency in config)
 
 ### Setup
 
