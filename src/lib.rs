@@ -5,13 +5,6 @@ pub mod util;
 
 const DEBUG: bool = true;
 
-/// Completely drop Github POST requests concerning private repos
-pub const IGNORE_PRIVATE_REPOS: bool = true;
-
-/// Process Github POST requests concerning private repos
-/// but never send outbound trafic (e.g. Discord)
-pub const DONT_MESSAGE_ON_PRIVATE_REPOS: bool = true;
-
 pub fn debug(msg: String, context: Option<String>)
 {
     if DEBUG == false { return }

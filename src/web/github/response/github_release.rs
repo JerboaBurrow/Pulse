@@ -2,7 +2,6 @@ use std::collections::HashMap;
 
 use axum::http::{HeaderMap, StatusCode};
 use axum::body::Bytes;
-use regex::Regex;
 
 use crate::web::discord;
 use crate::web::event::{EventConfig, read_config, expand_template, select_template};

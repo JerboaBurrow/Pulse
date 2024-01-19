@@ -2,7 +2,6 @@ use crate::{web::
 {
     throttle::{IpThrottler, handle_throttle},
     github::{response::github_filter::filter_github, model::GithubStats},
-    discord::request::model::Webhook
 }, util::read_file_utf8};
 
 use tokio::task::spawn;

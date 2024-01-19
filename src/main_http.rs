@@ -1,6 +1,6 @@
 #[cfg(feature = "http")]
 
-use pulse::{server::http::ServerHttp, web::discord::request::model::Webhook, stats};
+use pulse::{server::http::ServerHttp, stats};
 
 #[cfg(feature = "http")]
 #[tokio::main]

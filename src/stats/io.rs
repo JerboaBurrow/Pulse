@@ -5,7 +5,6 @@ use std::{sync::Arc, collections::HashMap};
 use chrono::{Local, Datelike};
 use tokio::sync::Mutex;
 
-use crate::DONT_MESSAGE_ON_PRIVATE_REPOS;
 use crate::util::{write_file, read_file_utf8};
 use crate::web::discord::request::model::Webhook;
 use crate::web::discord::request::post::post;
@@ -14,6 +13,8 @@ use crate::server::model::AppState;
 
 use std::time::{Duration, SystemTime};
 use std::thread::sleep;
+
+use super::model::{StatsConfig, STATS_CONFIG_PATH};
 
 const STATS_PATH: &str = "repo.stats";
 const LOG_FREQUENCY_MINUTES: u64 = 60; 
@@ -61,6 +62,35 @@ pub async fn collect(stats: Arc<Mutex<AppState>>, data: HashMap<String, serde_js
 
 }
 
+pub fn read_config() -> StatsConfig
+{
+    if Path::new(STATS_CONFIG_PATH).exists()
+    {
+        let conf_string = read_file_utf8(STATS_CONFIG_PATH);
+        let config: StatsConfig = match conf_string.is_none()
+        {
+            true => StatsConfig::new(true),
+            false => 
+            {
+                match serde_json::from_str(conf_string.unwrap().as_str())
+                {
+                    Ok(s) => s,
+                    Err(e) => 
+                    {
+                        crate::debug(format!("{}", e), None);
+                        StatsConfig::new(true)
+                    }
+                }
+            }
+        };
+        config
+    }
+    else
+    {
+        StatsConfig::new(true)
+    }
+}
+
 pub async fn watch(disc: Webhook, stats: Arc<Mutex<AppState>>)
 {
     let mut last_message = SystemTime::UNIX_EPOCH;
@@ -69,6 +99,8 @@ pub async fn watch(disc: Webhook, stats: Arc<Mutex<AppState>>)
         
         {
             let mut held_stats = stats.lock().await;
+
+            let config = read_config();
 
             let date = Local::now();
 
@@ -128,7 +160,7 @@ pub async fn watch(disc: Webhook, stats: Arc<Mutex<AppState>>)
 
                 for repo in stats.repos.into_iter()
                 {
-                    if repo.0.contains("private") && DONT_MESSAGE_ON_PRIVATE_REPOS
+                    if repo.0.contains("private") && config.suppress_private()
                     {
                         continue;
                     }

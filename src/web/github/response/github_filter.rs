@@ -185,20 +185,13 @@ where B: axum::body::HttpBody<Data = Bytes>
             {
                 Some(msg) =>
                 {
-                    if parsed_data.contains_key("repository") && crate::DONT_MESSAGE_ON_PRIVATE_REPOS && parsed_data["repository"]["private"].as_bool().is_some_and(|x|x)
+                    match post(event.get_end_point(), msg).await
                     {
-                        StatusCode::OK
-                    }
-                    else
-                    {
-                        match post(event.get_end_point(), msg).await
+                        Ok(_) => StatusCode::OK,
+                        Err(e) => 
                         {
-                            Ok(_) => StatusCode::OK,
-                            Err(e) => 
-                            {
-                                crate::debug(format!("error while sending to discord {}", e), None);
-                                StatusCode::INTERNAL_SERVER_ERROR
-                            }
+                            crate::debug(format!("error while sending to discord {}", e), None);
+                            StatusCode::INTERNAL_SERVER_ERROR
                         }
                     }
                 },
