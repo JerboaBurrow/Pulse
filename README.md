@@ -48,26 +48,56 @@ These can include interpolation placeholders, i.e. ```<respository/name>``` sear
     "github_released":
     {
         "hmac": "this_is_secret_number_one",
-        "template": "Newly <action> release for <respository/name>!",
-        "end_point": { "addr": "https://discord.com/api/webhooks/a/webhook" }
+        "templates":
+        [ 
+            {
+                "check_value_path": "",
+                "check_value": "",
+                "body": "New release!"
+            }
+        ],
+        "end_point": { "addr": "https://discord.com/api/webhooks/aaa/bbb" },
+        "dont_message_on_private_repos": true
     },
     "github_starred":
     {
-        "hmac": "this_is_secret_number_one",
-        "template": "A star was <action> for <repository/name>!",
-        "end_point": { "addr": "https://discord.com/api/webhooks/a/webhook" }
+        "hmac": "this_is_secret_number_two",
+        "templates":
+        [
+            {
+                "check_value_path": "action",
+                "check_value": "created",
+                "body": "<repository/name> just got a new star! That makes <repository/stargazers_count>"
+            },
+            {
+                "check_value_path": "action",
+                "check_value": "deleted",
+                "body": "<repository/name> just lost a star :cry: That makes <repository/stargazers_count>"
+            }
+        ],
+        "end_point": { "addr": "https://discord.com/api/webhooks/xxx/yyy" },
+        "dont_message_on_private_repos": true
     },
     "github_pushed":
     {
-        "hmac": "this_is_secret_number_two",
-        "template": "New push!",
-        "end_point": { "addr": "https://discord.com/api/webhooks/a/webhook" }
+        "hmac": "this_is_secret_number_one",
+        "templates": [ ],
+        "end_point": { "addr": "" },
+        "dont_message_on_private_repos": true
     },
     "github_ping":
     {
-        "hmac": "this_is_secret_number_three",
-        "template": "New ping!",
-        "end_point": { "addr": "https://discord.com/api/webhooks/another/webhook" }
+        "hmac": "this_is_secret_number_one",
+        "templates":
+        [
+            {
+                "check_value_path": "",
+                "check_value": "",
+                "body": "Ping!"
+            }
+        ],
+        "end_point": { "addr": "https://discord.com/api/webhooks/aaa/bbb" },
+        "dont_message_on_private_repos": true
     }
 }
 ```
