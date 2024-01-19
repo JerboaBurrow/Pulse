@@ -5,7 +5,7 @@ use axum::body::Bytes;
 use regex::Regex;
 
 use crate::web::discord;
-use crate::web::event::{EventConfig, read_config, expand_template};
+use crate::web::event::{EventConfig, read_config, expand_template, select_template};
 use crate::web::event::Event;
 
 use super::github_filter::github_request_is_authentic;
@@ -83,12 +83,14 @@ impl Event for GithubReleased
             _ => {return (None, StatusCode::OK)}
         };
 
+        let template = select_template(self.config.get_templates(), data.clone());
+
         let template = if data["repository"]["name"].is_string()
         {
             match data["repository"]["name"] == "Pulse" 
             {
-               true => self.config.get_template().replacen("<repository/name>", "Pulse (that's me!)", 1),
-               false => {self.config.get_template()}
+               true => template.replacen("<repository/name>", "Pulse (that's me!)", 1),
+               false => {template}
             }
         }
         else

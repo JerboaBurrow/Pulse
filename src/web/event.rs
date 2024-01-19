@@ -15,10 +15,26 @@ pub const CONFIG_PATH: &str = "event_config.json";
 const TEMPLATE_REPLACE_REGEX: &str = "<[^<>]+>";
 
 #[derive(Clone, Serialize, Deserialize)]
+pub struct Template
+{
+    check_value_path: String,
+    check_value: String,
+    body: String
+}
+
+impl Template 
+{
+    pub fn new() -> Template
+    {
+        Template {check_value_path: String::new(), check_value: String::new(), body: String::new()}
+    }
+}
+
+#[derive(Clone, Serialize, Deserialize)]
 pub struct EventConfig
 {
     hmac: String,
-    template: String,
+    templates: Vec<Template>,
     end_point: discord::request::model::Webhook
 }
 
@@ -29,9 +45,9 @@ impl EventConfig
         self.hmac.clone()
     }
 
-    pub fn get_template(&self) -> String
+    pub fn get_templates(&self) -> Vec<Template>
     {
-        self.template.clone()
+        self.templates.clone()
     }
 
     pub fn get_end_point(&self) -> discord::request::model::Webhook
@@ -41,7 +57,7 @@ impl EventConfig
 
     pub fn new() -> EventConfig
     {
-        EventConfig {hmac: "".to_string(), template: "".to_string(), end_point: discord::request::model::Webhook::new("".to_string())}
+        EventConfig {hmac: "".to_string(), templates: vec![Template::new()], end_point: discord::request::model::Webhook::new("".to_string())}
     }
 }
 pub trait Event
@@ -131,4 +147,47 @@ pub fn expand_template(template: String, data: HashMap<String, serde_json::Value
     }
 
     Some(formatted)
+}
+
+pub fn select_template(templates: Vec<Template>, data: HashMap<String, serde_json::Value>) -> String
+{
+    if templates.is_empty()
+    {
+        return "".to_string()
+    }
+    else if templates.len() == 1 
+    {
+        return templates[0].body.clone()
+    }
+
+    for template in templates
+    {
+        let path: Vec<&str> = template.check_value_path.split("/").collect();
+        
+        let extracted_value= match path.len()
+        {
+            0 => None,
+            1 => Some(&data[path[0]]),
+            _ => 
+            {
+                let p = ["/", &path[1..path.len()].join("/")].join("");
+                data[path[0]].pointer(&p)
+            }
+        };
+
+        if extracted_value.is_none()
+        {
+            continue
+        }
+
+        let string_value = extracted_value.unwrap().to_string().replace("\"", "");
+
+        if string_value == template.check_value
+        {
+            return template.body
+        }
+    }
+
+    return String::new()
+
 }

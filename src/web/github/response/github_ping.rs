@@ -4,7 +4,7 @@ use axum::http::{HeaderMap, StatusCode};
 use axum::body::Bytes;
 
 use crate::web::discord;
-use crate::web::event::{EventConfig, read_config, expand_template};
+use crate::web::event::{EventConfig, read_config, expand_template, select_template};
 use crate::web::event::Event;
 
 use super::github_filter::github_request_is_authentic;
@@ -48,6 +48,9 @@ impl Event for GithubPing
 
     fn into_response(&self, data: HashMap<String, serde_json::Value>) -> (Option<String>, StatusCode)
     {
-        (expand_template(self.config.get_template(), data), StatusCode::OK)
+
+        let template = select_template(self.config.get_templates(), data.clone());
+
+        (expand_template(template, data), StatusCode::OK)
     }
 }

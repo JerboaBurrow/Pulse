@@ -4,7 +4,7 @@ use axum::http::{HeaderMap, StatusCode};
 use axum::body::Bytes;
 
 use crate::web::discord;
-use crate::web::event::{EventConfig, read_config};
+use crate::web::event::{EventConfig, read_config, select_template, expand_template};
 use crate::web::event::Event;
 
 use super::github_filter::github_request_is_authentic;
@@ -80,12 +80,14 @@ impl Event for GithubStarred
             _ => {}
         };
     
-        let name = if data["repository"]["name"].is_string()
+        let template = select_template(self.config.get_templates(), data.clone());
+
+        let template = if data["repository"]["name"].is_string()
         {
-                match data["repository"]["name"] == "Pulse" 
+            match data["repository"]["name"] == "Pulse" 
             {
-                true => "Pulse (that's me!)",
-                false => data["repository"]["name"].as_str().unwrap()
+               true => template.replacen("<repository/name>", "Pulse (that's me!)", 1),
+               false => {template}
             }
         }
         else
@@ -93,38 +95,11 @@ impl Event for GithubStarred
             return (None, StatusCode::INTERNAL_SERVER_ERROR)
         };
     
-        crate::debug(format!("Extracted name {:?}", name), None);
-    
-        let msg = match action
-        {
-            GithubStarredActionType::CREATED =>
-            {
-                format!
-                (
-                    "{} just got a new :star:, that makes {}", 
-                    name, 
-                    data["repository"]["stargazers_count"]
-                )
-            },
-            GithubStarredActionType::DELETED =>
-            {
-                format!
-                (
-                    "{} just lost a :star:, that makes {} :cry:", 
-                    name, 
-                    data["repository"]["stargazers_count"]
-                )
-            },
-            _ => {return (None, StatusCode::INTERNAL_SERVER_ERROR)}
-        };
-    
-        crate::debug(format!("Formatted message {:?}", msg), None);
-    
         if crate::DONT_MESSAGE_ON_PRIVATE_REPOS && data["repository"]["private"].as_bool().is_some_and(|x|x)
         {
             return (None, StatusCode::OK);
         }
 
-        (Some(msg), StatusCode::OK)
+        (expand_template(template, data), StatusCode::OK)
     }
 }
