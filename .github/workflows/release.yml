@@ -74,13 +74,13 @@ jobs:
               ls
               mv pulse-ubuntu-20.04 pulse
               chmod +x pulse
-              tar -cvpfz pulse-linux-x86_64.tar.gz pulse LICENSE
+              tar -cvf pulse-linux-x86_64.tar.gz pulse LICENSE
               mv pulse-windows-latest.exe pulse.exe
               chmod +x pulse.exe
               zip pulse-windows.zip pulse.exe LICENSE
               mv pulse-macos-latest pulse
               chmod +x pulse
-              tar -cvpfz pulse-macOS.tar.gz pulse LICENSE
+              tar -cvf pulse-macOS.tar.gz pulse LICENSE
               
 
   #     https://github.com/softprops/action-gh-release
