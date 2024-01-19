@@ -4,7 +4,13 @@
 </p>
 </a>
 
-### A work in progress information bot linking Discord and Github, with more to come
+### A work in progress information bot linking Discord and Github
+
+- **HMAC event authentication** 🔐: filter Github webhook POST events, and authenticate with hotloadable HMAC's per event type
+- **Discord message posting with templates** 📟: hotloadable templates per event type
+- **Message template interpolation**: automatically fill template from POST JSON bodies, fully hotloadable 
+- **Template selection logic** hotloadable template selection depending on values in Github POST body JSON data
+- **Hotloadable configuration** 🔥: ssl keys, ports, multiple Discord webhooks endpoints, Github HMAC's, event templates, template selection logic.   
 
 ![Screenshot from 2024-01-06 14-21-18](https://github.com/JerboaBurrow/Pulse/assets/84378622/34a58459-a51d-4c80-9d1a-07d6f98551eb)
 
