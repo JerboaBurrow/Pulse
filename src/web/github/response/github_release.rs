@@ -98,7 +98,7 @@ impl Event for GithubReleased
             return (None, StatusCode::INTERNAL_SERVER_ERROR)
         };
     
-        if crate::DONT_MESSAGE_ON_PRIVATE_REPOS && data["repository"]["private"].as_bool().is_some_and(|x|x)
+        if self.config.silent_on_private_repos() && data["repository"]["private"].as_bool().is_some_and(|x|x)
         {
             return (None, StatusCode::OK);
         }

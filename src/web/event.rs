@@ -17,8 +17,11 @@ const TEMPLATE_REPLACE_REGEX: &str = "<[^<>]+>";
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Template
 {
+    #[serde(default)]
     check_value_path: String,
+    #[serde(default)]
     check_value: String,
+    #[serde(default)]
     body: String
 }
 
@@ -35,7 +38,14 @@ pub struct EventConfig
 {
     hmac: String,
     templates: Vec<Template>,
-    end_point: discord::request::model::Webhook
+    end_point: discord::request::model::Webhook,
+    #[serde(default="default_privacy")]
+    dont_message_on_private_repos: bool
+}
+
+fn default_privacy() -> bool 
+{
+    true
 }
 
 impl EventConfig
@@ -55,11 +65,23 @@ impl EventConfig
         self.end_point.clone()
     }
 
+    pub fn silent_on_private_repos(&self) -> bool
+    {
+        self.dont_message_on_private_repos
+    }
+
     pub fn new() -> EventConfig
     {
-        EventConfig {hmac: "".to_string(), templates: vec![Template::new()], end_point: discord::request::model::Webhook::new("".to_string())}
+        EventConfig 
+        {
+            hmac: "".to_string(), 
+            templates: vec![Template::new()], 
+            end_point: discord::request::model::Webhook::new("".to_string()), 
+            dont_message_on_private_repos: true
+        }
     }
 }
+
 pub trait Event
 {
     fn get_token(&self) -> String;

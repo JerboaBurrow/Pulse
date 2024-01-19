@@ -58,6 +58,11 @@ impl Event for GithubPushed
 
         let template = select_template(self.config.get_templates(), data.clone());
 
+        if self.config.silent_on_private_repos() && data["repository"]["private"].as_bool().is_some_and(|x|x)
+        {
+            return (None, StatusCode::OK);
+        }
+        
         (expand_template(template, data), StatusCode::OK)
     }
 }
