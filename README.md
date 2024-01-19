@@ -16,11 +16,16 @@
 - [x] support for HTTPS POST receipts (*HTTP as a cargo build option*)
 - [x] verify POST's are from github using the webhook secret
 - [x] starred formatting 
+- [x] hot loading of formatting templates, webhook endpoints, and github HMACs
+- [x] template interpolation, with interpolation data extracted from POST bodies.
+- [x] support multiple webhook end-points
+- [x] support multiple github webhook origins (i.e. multiple HMACs)
+- [ ] suppress messaging on private repos as config option 
+- [ ] select templates based upon POST body/header content
 - [ ] Release formatting (create, publish)
 - [ ] Issue formatting (e.g. when tagged with bug)
 - [ ] PR formatting (for new pr's and for successful merges)
-- [ ] hot loading of formatting templates, webhook, and github HMAC token
-- [ ] support multiple webhook end-points
+- [ ] statistics roundup (set frequency in config)
 
 ### Setup
 
@@ -28,7 +33,9 @@ You can host on localhost, or via a remote server with http or https
 
 #### Configuration files
 
-Create a ```event_config.json``` specifying hmac secrets and Discord webhook endpoints, and templates for responses:
+Create a ```event_config.json``` specifying hmac secrets and Discord webhook endpoints, and templates for responses. 
+
+These can include interpolation placeholders, i.e. ```<respository/name>``` searches the JSON body for the path ```repository/name``` and replaces the token with it. [Checkout the payloads here](https://docs.github.com/en/webhooks/webhook-events-and-payloads) **any** JSON path is supported in Pulse if it is in the Github payload.
 
 ```json
 {
@@ -72,7 +79,7 @@ and a ```config.json``` for the server parameters
 
 #### Localhost
 
-Just launch the serverr
+Just launch the server!
 
 #### Example Google Cloud instance (free tier)
 
@@ -88,9 +95,9 @@ The [gcloud free tier](https://cloud.google.com/free?hl=en) [allows for the foll
 
 ```
 
-You may still see costs in the Google cloud console, or savings suggestions. You should not be charged though.
+You may still see costs in the Google cloud console, or savings suggestions. You should not be charged though. I have had it running for years all free.
 
-##### CLI
+##### Create it using the CLI...
 
 Using the gloud cli this command should create an instance template for the free tier, which can be used to create instances
 
@@ -105,7 +112,7 @@ gcloud beta compute instance-templates create free-tier-template-http --project=
 --no-shielded-secure-boot --shielded-vtpm --shielded-integrity-monitoring --reservation-affinity=any
 ```
 
-##### Cloud console
+##### ...or using Cloud console
 
 - create an e2 in us-central1 (Iowa) for both zone and region
 - select e2-micro (0.25-2 vCPU 1GB memory)
@@ -117,7 +124,7 @@ gcloud beta compute instance-templates create free-tier-template-http --project=
 
 #### Self signed (useful for localhost testing)
 
-- You can use the bash script ```certs/gen.sh``` to generate a key/cert pair with openssl 
+- You can use the bash script ```certs/gen.sh``` to generate a key/cert pair with openssl
 
 #### Production; from authority
 
