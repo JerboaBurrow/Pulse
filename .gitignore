@@ -5,3 +5,4 @@ target/
 .vscode
 config.json
 event_config.json
+!tests/event_config.json
