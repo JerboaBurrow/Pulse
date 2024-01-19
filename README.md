@@ -7,7 +7,7 @@
 ### A work in progress information bot linking Discord and Github
 
 - **HMAC event authentication** 🔐: filter Github webhook POST events, and authenticate with hotloadable HMAC's per event type
-- **Discord message posting with templates** 📟: hotloadable templates per event type
+- **Discord message posting with templates** 📟: format messages with hotloadable templates, per event type, and post to hotloadable Discord webhook endpoints
 - **Message template interpolation**: automatically fill template from POST JSON bodies, fully hotloadable 
 - **Template selection logic** hotloadable template selection depending on values in Github POST body JSON data
 - **Hotloadable configuration** 🔥: ssl keys, ports, multiple Discord webhooks endpoints, Github HMAC's, event templates, template selection logic.   
