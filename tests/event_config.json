@@ -5,8 +5,14 @@
         "templates":
         [ 
             {
-                "check_value_path": "",
-                "check_value": "",
+                "criteria": 
+                [
+                    {
+                        "check_value_path": "",
+                        "check_value_in": [],
+                        "check_value_not_in": []
+                    }
+                ],
                 "body": "New release!"
             }
         ],
@@ -19,13 +25,25 @@
         "templates":
         [
             {
-                "check_value_path": "action",
-                "check_value": "created",
+                "criteria": 
+                [
+                    {
+                        "check_value_path": "action",
+                        "check_value_in": ["created"],
+                        "check_value_not_in": []
+                    }
+                ],
                 "body": "<repository/name> just got a new star! That makes <repository/stargazers_count>"
             },
             {
-                "check_value_path": "action",
-                "check_value": "deleted",
+                "criteria": 
+                [
+                    {
+                        "check_value_path": "action",
+                        "check_value_in": ["deleted"],
+                        "check_value_not_in": []
+                    }
+                ],
                 "body": "<repository/name> just lost a star :cry: That makes <repository/stargazers_count>"
             }
         ],
@@ -45,8 +63,6 @@
         "templates":
         [
             {
-                "check_value_path": "",
-                "check_value": "",
                 "body": "Ping!"
             }
         ],

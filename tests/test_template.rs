@@ -15,8 +15,6 @@ mod test_template
     const SINGLE_JSON_TEMPLATE: &str = r#"
     [ 
             {
-                "check_value_path": "",
-                "check_value": "",
                 "body": "New release!"
             }
     ]
@@ -30,14 +28,84 @@ mod test_template
     const STAR_JSON_TEMPLATE: &str = r#"
     [
         {
-            "check_value_path": "action",
-            "check_value": "created",
+            "criteria": 
+            [
+                {
+                    "check_value_path": "action",
+                    "check_value_in": ["created"],
+                    "check_value_not_in": []
+                }
+            ],
             "body": "New star!"
         },
         {
-            "check_value_path": "action",
-            "check_value": "deleted",
+            "criteria": 
+            [
+                {
+                    "check_value_path": "action",
+                    "check_value_in": ["deleted"],
+                    "check_value_not_in": []
+                }
+            ],
             "body": "Lost a star!"
+        }
+    ]
+    "#;
+
+    const STAR_CREATED_NOT_JERBOA_APP_JSON_TEMPLATE: &str = r#"
+    [
+        {
+            "criteria": 
+            [
+                {
+                    "check_value_path": "action",
+                    "check_value_in": ["created"],
+                    "check_value_not_in": []
+                },
+                {
+                    "check_value_path": "sender/login",
+                    "check_value_in": [],
+                    "check_value_not_in": ["Jerboa-app"]
+                }
+            ],
+            "body": "New star!"
+        }
+    ]
+    "#;
+
+    const STAR_CREATED_JERBOA_APP_JSON_TEMPLATE: &str = r#"
+    [
+        {
+            "criteria": 
+            [
+                {
+                    "check_value_path": "action",
+                    "check_value_in": ["created"],
+                    "check_value_not_in": []
+                },
+                {
+                    "check_value_path": "sender/login",
+                    "check_value_in": [],
+                    "check_value_not_in": ["Jerboa-app"]
+                }
+            ],
+            "body": "New star!"
+        },
+        {
+            "criteria": 
+            [
+                {
+                    "check_value_path": "action",
+                    "check_value_in": ["created"],
+                    "check_value_not_in": []
+                },
+                {
+                    "check_value_path": "sender/login",
+                    "check_value_in": ["Jerboa-app"],
+                    "check_value_not_in": []
+                }
+            ],
+            "body": "New star from Jerboa!"
         }
     ]
     "#;
@@ -110,6 +178,30 @@ mod test_template
         let selected = select_template(templates, parsed_data);
 
         assert_eq!(selected, "Lost a star!".to_string())
+    }
+
+    #[test]
+    fn select_star_create_not_user_json_templates()
+    {
+        let templates: Vec<Template> = serde_json::from_str(STAR_CREATED_NOT_JERBOA_APP_JSON_TEMPLATE).unwrap();
+
+        let parsed_data: HashMap<String, serde_json::Value> = serde_json::from_str(STAR_CREATED_PAYLOAD).unwrap();
+
+        let selected = select_template(templates, parsed_data);
+
+        assert_eq!(selected, "".to_string())
+    }
+
+    #[test]
+    fn select_star_create_is_user_json_templates()
+    {
+        let templates: Vec<Template> = serde_json::from_str(STAR_CREATED_JERBOA_APP_JSON_TEMPLATE).unwrap();
+
+        let parsed_data: HashMap<String, serde_json::Value> = serde_json::from_str(STAR_CREATED_PAYLOAD).unwrap();
+
+        let selected = select_template(templates, parsed_data);
+
+        assert_eq!(selected, "New star from Jerboa!".to_string())
     }
 
     #[test]
