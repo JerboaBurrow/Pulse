@@ -184,16 +184,40 @@ pub fn expand_template(template: String, data: HashMap<String, serde_json::Value
 
 pub fn satisfied(criterion: Criterion, data: &HashMap<String, serde_json::Value>) -> bool
 {
+
+    if criterion.check_value_path == ""
+    {
+        return true
+    }
+
     let path: Vec<&str> = criterion.check_value_path.split("/").collect();
         
     let extracted_value= match path.len()
     {
         0 => None,
-        1 => Some(&data[path[0]]),
+        1 => 
+        { 
+            if data.contains_key(path[0])
+            {
+                Some(&data[path[0]])
+            }
+            else
+            {
+                None
+            }
+        },
         _ => 
         {
             let p = ["/", &path[1..path.len()].join("/")].join("");
-            data[path[0]].pointer(&p)
+            if data.contains_key(path[0])
+            {
+                data[path[0]].pointer(&p)
+            }
+            else
+            {
+                None
+            }
+            
         }
     };
 
