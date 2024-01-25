@@ -15,21 +15,32 @@ pub const CONFIG_PATH: &str = "event_config.json";
 const TEMPLATE_REPLACE_REGEX: &str = "<[^<>]+>";
 
 #[derive(Clone, Serialize, Deserialize)]
-pub struct Template
+pub struct Criterion
 {
     #[serde(default)]
     check_value_path: String,
     #[serde(default)]
-    check_value: String,
+    check_value_in: Vec<String>,
+    #[serde(default)]
+    check_value_not_in: Vec<String>
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct Template
+{
+    #[serde(default="default_criteria")]
+    criteria: Vec<Criterion>,
     #[serde(default)]
     body: String
 }
+
+fn default_criteria() -> Vec<Criterion> { Vec::<Criterion>::new() }
 
 impl Template 
 {
     pub fn new() -> Template
     {
-        Template {check_value_path: String::new(), check_value: String::new(), body: String::new()}
+        Template {criteria: Vec::<Criterion>::new(), body: String::new()}
     }
 }
 
@@ -171,40 +182,73 @@ pub fn expand_template(template: String, data: HashMap<String, serde_json::Value
     Some(formatted)
 }
 
+pub fn satisfied(criterion: Criterion, data: &HashMap<String, serde_json::Value>) -> bool
+{
+
+    if criterion.check_value_path == ""
+    {
+        return true
+    }
+
+    let path: Vec<&str> = criterion.check_value_path.split("/").collect();
+        
+    let extracted_value= match path.len()
+    {
+        0 => None,
+        1 => 
+        { 
+            if data.contains_key(path[0])
+            {
+                Some(&data[path[0]])
+            }
+            else
+            {
+                None
+            }
+        },
+        _ => 
+        {
+            let p = ["/", &path[1..path.len()].join("/")].join("");
+            if data.contains_key(path[0])
+            {
+                data[path[0]].pointer(&p)
+            }
+            else
+            {
+                None
+            }
+            
+        }
+    };
+
+    if extracted_value.is_none()
+    {
+        return false
+    }
+
+    let string_value = extracted_value.unwrap().to_string().replace("\"", "");
+
+    if (criterion.check_value_in.is_empty() || criterion.check_value_in.contains(&string_value)) &&
+        (criterion.check_value_not_in.is_empty() || !criterion.check_value_not_in.contains(&string_value))
+    {
+        return true
+    }
+    else
+    {
+        return false
+    }
+}
+
 pub fn select_template(templates: Vec<Template>, data: HashMap<String, serde_json::Value>) -> String
 {
     if templates.is_empty()
     {
         return "".to_string()
     }
-    else if templates.len() == 1 
-    {
-        return templates[0].body.clone()
-    }
 
     for template in templates
     {
-        let path: Vec<&str> = template.check_value_path.split("/").collect();
-        
-        let extracted_value= match path.len()
-        {
-            0 => None,
-            1 => Some(&data[path[0]]),
-            _ => 
-            {
-                let p = ["/", &path[1..path.len()].join("/")].join("");
-                data[path[0]].pointer(&p)
-            }
-        };
-
-        if extracted_value.is_none()
-        {
-            continue
-        }
-
-        let string_value = extracted_value.unwrap().to_string().replace("\"", "");
-
-        if string_value == template.check_value
+        if template.criteria.into_iter().all(|c| satisfied(c, &data))
         {
             return template.body
         }
