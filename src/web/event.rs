@@ -14,7 +14,7 @@ use crate::util::read_file_utf8;
 pub const CONFIG_PATH: &str = "event_config.json";
 const TEMPLATE_REPLACE_REGEX: &str = "<[^<>]+>";
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Criterion
 {
     #[serde(default)]
@@ -184,7 +184,7 @@ pub fn expand_template(template: String, data: HashMap<String, serde_json::Value
 
 pub fn satisfied(criterion: Criterion, data: &HashMap<String, serde_json::Value>) -> bool
 {
-
+    crate::debug(format!("testing criterion {:?}", criterion), None);
     if criterion.check_value_path == ""
     {
         return true
@@ -221,20 +221,36 @@ pub fn satisfied(criterion: Criterion, data: &HashMap<String, serde_json::Value>
         }
     };
 
+    crate::debug(format!("extraced {:?} from path {:?}", extracted_value, path), None);
+
     if extracted_value.is_none()
     {
+        crate::debug(format!("got none: return false"), None);
         return false
     }
 
     let string_value = extracted_value.unwrap().to_string().replace("\"", "");
 
+    crate::debug(format!("string value {}, check ins {:?}, check not ins {:?}", string_value, criterion.check_value_in, criterion.check_value_not_in), None);
+
+    crate::debug(
+        format!("in emtpy {} in contains {}, not in empty, {} not in contains {}", 
+        criterion.check_value_in.is_empty(),
+        criterion.check_value_in.contains(&string_value),
+        criterion.check_value_not_in.is_empty(),
+        criterion.check_value_not_in.contains(&string_value) ), 
+        None
+    );
+
     if (criterion.check_value_in.is_empty() || criterion.check_value_in.contains(&string_value)) &&
         (criterion.check_value_not_in.is_empty() || !criterion.check_value_not_in.contains(&string_value))
     {
+        crate::debug(format!("return true"), None);
         return true
     }
     else
     {
+        crate::debug(format!("return false"), None);
         return false
     }
 }
@@ -248,8 +264,10 @@ pub fn select_template(templates: Vec<Template>, data: HashMap<String, serde_jso
 
     for template in templates
     {
+        crate::debug(format!("testing template {}", template.body), None);
         if template.criteria.into_iter().all(|c| satisfied(c, &data))
         {
+            crate::debug(format!("selected template {}", template.body), None);
             return template.body
         }
     }

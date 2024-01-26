@@ -446,7 +446,7 @@ pub const RELEASE_PAYLOAD: &str = "
 
     pub const RELEASE_PAYLOAD_PRIVATE: &str = "
     {
-        \"action\": \"published\",
+        \"action\": \"created\",
         \"release\": {
             \"url\": \"https://api.github.com/repos/JerboaBurrow/jGL/releases/135576460\",
             \"assets_url\": \"https://api.github.com/repos/JerboaBurrow/jGL/releases/135576460/assets\",
