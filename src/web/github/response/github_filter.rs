@@ -33,7 +33,7 @@ response::
 
 use crate::web::is_authentic;
 
-use super::{github_forked, github_ping, github_pull_request};
+use super::{github_forked, github_issue, github_ping, github_pull_request};
 
 /// Middleware to detect, verify, and respond to a github POST request from a 
 /// Github webhook
@@ -130,6 +130,7 @@ where B: axum::body::HttpBody<Data = Bytes>
     {
         true => 
         {
+            crate::debug(format!("x-github-event: {:?}", headers["x-github-event"]), None);
             match std::str::from_utf8(headers["x-github-event"].as_bytes()).unwrap()
             {
                 github_pushed::X_GTIHUB_EVENT => 
@@ -155,6 +156,10 @@ where B: axum::body::HttpBody<Data = Bytes>
                 github_pull_request::X_GTIHUB_EVENT =>
                 {
                     Box::new(github_pull_request::GithubPullRequest::new())
+                },
+                github_issue::X_GTIHUB_EVENT =>
+                {
+                    Box::new(github_issue::GithubIssue::new())
                 }
                 _ => return Ok(StatusCode::CONTINUE.into_response())
             }
