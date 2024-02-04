@@ -41,7 +41,7 @@ jobs:
           cp LICENSE Pulse/
 
     - name: upload bundle
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.os }}
         path: Pulse
@@ -54,17 +54,17 @@ jobs:
     steps:
 
       - name: get linux build
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: ubuntu-20.04
 
       - name: get windows build
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: windows-latest
 
       - name: get macos build
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: macos-latest
 
