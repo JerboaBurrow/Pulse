@@ -88,5 +88,25 @@
         ],
         "end_point": { "addr": "" },
         "dont_message_on_private_repos": true
+    },
+    "github_pull_request":
+    {
+        "hmac": "this_is_secret_number_one",
+        "templates":
+        [ 
+            {
+                "criteria": 
+                [
+                    {
+                        "check_value_path": "",
+                        "check_value_in": [],
+                        "check_value_not_in": []
+                    }
+                ],
+                "body": "New PR from <sender/login>!"
+            }
+        ],
+        "end_point": { "addr": "https://discord.com/api/webhooks/1194210175121375262/UU7M37iR7e1aWFteFfAwiPaJkAXYwEao2-v7f1bmZyOGf30V4qKmTcjsdOBEYytDZKTN" },
+        "dont_message_on_private_repos": true
     }
 }
