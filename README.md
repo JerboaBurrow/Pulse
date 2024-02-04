@@ -21,16 +21,17 @@
 
 - [x] support for HTTPS POST receipts (*HTTP as a cargo build option*)
 - [x] verify POST's are from github using the webhook secret
-- [x] starred formatting 
+- [x] starred event
 - [x] hot loading of formatting templates, webhook endpoints, and github HMACs
 - [x] template interpolation, with interpolation data extracted from POST bodies.
 - [x] support multiple webhook end-points
 - [x] support multiple github webhook origins (i.e. multiple HMACs)
-- [ ] suppress messaging on private repos as config option 
-- [ ] select templates based upon POST body/header content
-- [ ] Release formatting (create, publish)
-- [ ] Issue formatting (e.g. when tagged with bug)
-- [ ] PR formatting (for new pr's and for successful merges)
+- [x] suppress messaging on private repos as config option (per event type)
+- [x] select templates based upon POST body/header content
+- [x] Release event
+- [x] Issue event
+- [x] PR event
+- [ ] Message queue for each Discord webhook (support spam throttling, dupe detection, etc.)
 - [ ] statistics roundup (set frequency in config)
 
 ### Setup
