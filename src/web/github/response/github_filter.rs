@@ -33,7 +33,7 @@ response::
 
 use crate::web::is_authentic;
 
-use super::github_ping;
+use super::{github_forked, github_ping};
 
 /// Middleware to detect, verify, and respond to a github POST request from a 
 /// Github webhook
@@ -147,6 +147,10 @@ where B: axum::body::HttpBody<Data = Bytes>
                 github_ping::X_GTIHUB_EVENT => 
                 {
                     Box::new(github_ping::GithubPing::new())
+                },
+                github_forked::X_GTIHUB_EVENT =>
+                {
+                    Box::new(github_forked::GithubForked::new())
                 }
                 _ => return Ok(StatusCode::CONTINUE.into_response())
             }
