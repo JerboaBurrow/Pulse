@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::net::{SocketAddr, Ipv4Addr, IpAddr};
-use std::time::Instant;
+use std::time::{Instant, Duration};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
@@ -32,17 +32,30 @@ pub struct IpThrottler
     requests_from: HashMap<Ipv4Addr, Requests>,
     max_requests_per_second: f64,
     timeout_millis: u128,
+    clear_period: Duration,
+    last_clear: Instant 
 }
 
 impl IpThrottler
 {
-    pub fn new(max_requests_per_second: f64, timeout_millis: u128) -> IpThrottler
+    pub fn new(max_requests_per_second: f64, timeout_millis: u128, clear_period_seconds: u64) -> IpThrottler
     {
         IpThrottler 
         {
             requests_from: HashMap::new(), 
             max_requests_per_second: max_requests_per_second,
-            timeout_millis: timeout_millis
+            timeout_millis: timeout_millis,
+            clear_period: Duration::from_secs(clear_period_seconds),
+            last_clear: Instant::now()
+        }
+    }
+
+    pub fn check_clear(&mut self)
+    {
+        if self.last_clear.elapsed() > self.clear_period
+        {
+            self.requests_from.clear();
+            self.last_clear = Instant::now();
         }
     }
 
@@ -105,15 +118,19 @@ pub async fn handle_throttle<B>
 ) -> Result<Response, StatusCode>
 {
 
-    if state.lock().await.is_limited(addr)
     {
-        Err(StatusCode::TOO_MANY_REQUESTS)
-    }
-    else 
-    {
-        println!("passing on");
-        let response = next.run(request).await;
-        Ok(response)
+        let mut throttler = state.lock().await;
+        throttler.check_clear();
+        if throttler.is_limited(addr)
+        {
+            Err(StatusCode::TOO_MANY_REQUESTS)
+        }
+        else 
+        {
+            crate::debug(format!("Allowing: {}", addr), None);
+            let response = next.run(request).await;
+            Ok(response)
+        }
     }
     
 }
