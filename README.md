@@ -1,8 +1,6 @@
 ## Pulse 
-<a href="https://discord.gg/SBeMPQtuB5">
-<img width="auto" height="24px" src=https://pulse.jerboa.app:3030/badge alt="Pulse status badge, with a link to the Discord channel. If this text is visible Pulse is sleeping."></img>
+<img width="auto" height="24px" src=https://pulse.jerboa.app:3030/badge alt="Pulse status badge. If this text is visible Pulse is sleeping."></img>
 </p>
-</a>
 
 ### A work in progress information bot linking Discord and Github
 
